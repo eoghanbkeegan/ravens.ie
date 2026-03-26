@@ -84,7 +84,7 @@ CREATE TABLE results (
   prime_won text,                             -- null or prime name e.g. 'Lap 5'
   points_earned int DEFAULT 0,
   prize_amount decimal(10,2) DEFAULT 0,
-  payout_status text DEFAULT 'pending' CHECK (payout_status IN ('pending','sent','claimed','failed')),
+  payout_status text DEFAULT 'pending' CHECK (payout_status IN ('pending','sent','claimed','failed','not_initiated')),
   payout_batch_id text,
   created_at timestamptz DEFAULT now(),
   UNIQUE(fixture_id, rider_id)

@@ -37,6 +37,7 @@ export default function AdminProductsPage() {
   const [orderWindowClose, setOrderWindowClose] = useState('')
   const [active, setActive] = useState(true)
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     async function load() {
       const { data } = await supabase

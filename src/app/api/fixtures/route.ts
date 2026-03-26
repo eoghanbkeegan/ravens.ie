@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/fixtures
 // Returns list of fixtures, used for dropdowns in:
 // - Admin rider import form (select which race to import riders for)

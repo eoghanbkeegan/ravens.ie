@@ -77,6 +77,7 @@ export default function AdminTemplatesPage() {
       setLoading(false)
     }
     load()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // When positions count changes, rebuild points and prizes arrays
