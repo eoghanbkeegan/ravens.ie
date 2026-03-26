@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { resend } from '@/lib/email'
+import { getResend } from '@/lib/email'
 import { getAccessToken, PAYPAL_API } from '@/lib/paypal'
 
 export async function POST(req: NextRequest) {
@@ -8,6 +8,7 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+  const resend = getResend() 
   try {
     const {
       paypal_order_id, product_id, size, quantity,

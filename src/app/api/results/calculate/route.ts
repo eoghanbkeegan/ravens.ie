@@ -68,9 +68,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Use fixture-level template override if set, otherwise fall back to series template
-    const templateId =
-      fixture.scoring_template_id ??
-      (fixture.series as { scoring_template_id: string })?.scoring_template_id
+const fixtureData = fixture as unknown as {
+  scoring_template_id: string | null
+  series: { scoring_template_id: string } | null
+}
+
+const templateId =
+  fixtureData.scoring_template_id ??
+  fixtureData.series?.scoring_template_id
 
     if (!templateId) {
       return NextResponse.json(
