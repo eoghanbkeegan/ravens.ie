@@ -6,8 +6,8 @@ const JerseyViewer = dynamic(() => import('@/components/JerseyViewer'), {
 
 export default function Home() {
   return (
-    <main style={{ minHeight: '400vh', background: '#0f0f0f', paddingTop: '10vh' }}>
-      <JerseyViewer />
+    <main style={{ minHeight: '400vh', paddingTop: '10vh' }}>
+      
     </main>
   )
 }
