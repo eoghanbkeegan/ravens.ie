@@ -125,10 +125,10 @@ function FixtureSummary({ results }: { results: Result[] }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function PayoutsPage() {
-    const supabase = createClient(
+  const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const router   = useRouter();
 
   const [groups,    setGroups]    = useState<FixtureGroup[]>([]);
