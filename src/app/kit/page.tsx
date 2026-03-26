@@ -1,6 +1,17 @@
 'use client'
+
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
+
+const JerseyViewer = dynamic(() => import('@/components/JerseyViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[600px] flex items-center justify-center">
+      <p className="text-ravens-muted text-sm">Loading kit preview...</p>
+    </div>
+  ),
+})
 
 type Product = {
   id: string
@@ -107,7 +118,7 @@ export default function KitShopPage() {
       const captureData = await captureRes.json() as { error?: string }
       if (captureData.error) throw new Error(captureData.error)
 
-      setSuccess(`Order placed successfully! Check ${buyerEmail} for your confirmation.`)
+      setSuccess(`Order placed! Check ${buyerEmail} for your confirmation.`)
       setBuyerName('')
       setBuyerEmail('')
       setDeliveryAddress('')
@@ -121,19 +132,23 @@ export default function KitShopPage() {
     }
   }
 
-  if (loading) return (
-    <div className="min-h-screen bg-ravens-dark flex items-center justify-center">
-      <p className="text-ravens-muted">Loading kit...</p>
-    </div>
-  )
-
   return (
     <div className="min-h-screen bg-ravens-dark">
-      <div className="max-w-4xl mx-auto px-4 py-12 space-y-10">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Kit Shop</h1>
-          <p className="text-ravens-muted mt-2">Order your DRRC kit below.</p>
+
+      {/* ── Hero — 3D Jersey ── */}
+      <div className="relative w-full" style={{ minHeight: 600 }}>
+        <JerseyViewer />
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-12 pointer-events-none">
+          <h1 className="text-4xl font-bold text-white mb-2" style={{ fontFamily: 'cursive' }}>
+            Dublin Ravens
+          </h1>
+          <p className="text-ravens-muted uppercase tracking-widest text-sm">Kit Shop</p>
+          <p className="text-ravens-muted text-xs mt-2">Scroll to explore · Drag to rotate</p>
         </div>
+      </div>
+
+      {/* ── Products ── */}
+      <div className="max-w-4xl mx-auto px-4 py-12 space-y-10">
 
         {success && (
           <div className="bg-green-900 border border-green-700 rounded-lg px-4 py-3 text-green-300 text-sm">
@@ -147,7 +162,11 @@ export default function KitShopPage() {
           </div>
         )}
 
-        {products.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <p className="text-ravens-muted">Loading kit...</p>
+          </div>
+        ) : products.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-ravens-muted text-lg">No kit available right now.</p>
             <p className="text-ravens-muted text-sm mt-2">Check back soon for the next order window.</p>
