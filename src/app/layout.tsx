@@ -1,11 +1,18 @@
 import type { Metadata } from 'next'
+import { Outfit } from 'next/font/google'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
 import './globals.css'
 
+const outfit = Outfit({
+  subsets: ['latin'],
+  variable: '--font-outfit',
+  display: 'swap',
+})
+
 export const metadata: Metadata = {
   title: 'Dublin Ravens Road Club',
-  description: 'Race results, standings and kit shop',
+  description: 'Race results, standings and kit shop for Dublin Ravens Road Club.',
 }
 
 export default function RootLayout({
@@ -14,12 +21,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={outfit.variable}>
       <body
-        className="min-h-screen flex flex-col m-0"
-        style={{
-          background: 'linear-gradient(180deg, #000000 0%, #292450 25%, #2C2865 50%, #464775 75%, #E1E7FF 100%)',
-        }}
+        className="min-h-screen flex flex-col m-0 antialiased"
+        style={{ background: '#0A0A0A', color: '#ffffff', fontFamily: 'var(--font-outfit, sans-serif)' }}
       >
         <Nav />
         <main className="flex-1 pt-16">
