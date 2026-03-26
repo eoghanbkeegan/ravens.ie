@@ -4,6 +4,17 @@ export const revalidate = 0
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@supabase/supabase-js'
+import nextDynamic from 'next/dynamic'
+import image1 from "@/assets/images/DublinRavens.png"
+import image2 from "@/assets/images/main_page_image.jpg"
+
+export const dynamic = 'force-dynamic'
+
+const InstagramFeed = nextDynamic(() => import('@/components/InstagramFeed'), {
+  ssr: false,
+})
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type Fixture = {
   id: string
@@ -124,6 +135,7 @@ export default async function HomePage() {
         <div className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none"
           style={{ background: 'linear-gradient(to bottom, transparent, #0A0A0A)' }} />
 
+        <Image src={image1} alt="Ravens Logo"/>
         <div className="relative z-10 max-w-3xl">
           <div className="inline-block text-xs font-semibold tracking-[0.15em] uppercase text-ravens-muted border border-white/10 px-5 py-1.5 rounded-full mb-8">
             Est. 2025 · Dublin, Ireland · Cycling Ireland Affiliated
@@ -207,6 +219,8 @@ export default async function HomePage() {
             </div>
             <div className="aspect-[4/3] rounded-xl overflow-hidden border border-white/6 bg-ravens-surface flex items-center justify-center">
               <p className="text-ravens-muted text-sm text-center px-6">
+              
+              <Image src={image2} alt="main_page_image.jpg"/>
                 Photo: Sean Rowe Images
               </p>
             </div>
