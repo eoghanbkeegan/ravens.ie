@@ -205,8 +205,7 @@ function FixtureCard({ fixture }: { fixture: Fixture }) {
       {/* CTA */}
       <div className="shrink-0">
         {fixture.status === 'upcoming' && (
-          
-            href="https://eventmaster.ie"
+            <a href="https://eventmaster.ie"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 no-underline text-xs font-semibold px-4 py-2 rounded-lg transition-all"
