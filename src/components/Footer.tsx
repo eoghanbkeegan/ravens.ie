@@ -16,7 +16,7 @@ export default function Footer() {
           About us
         </Link>
         <a
-          href="https://instagram.com"
+          href="https://instagram.com/dublin_ravens_road_club"
           target="_blank"
           rel="noopener noreferrer"
           className="text-ravens-muted hover:text-white transition-colors"
