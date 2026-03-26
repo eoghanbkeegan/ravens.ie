@@ -7,97 +7,43 @@ export default function Nav() {
   const [open, setOpen] = useState(false)
 
   return (
-    <nav style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 100,
-      padding: '16px 24px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      background: 'rgba(15, 15, 15, 0.85)',
-      backdropFilter: 'blur(12px)',
-      borderBottom: '1px solid #252525',
-    }}>
+    <nav className="fixed top-0 left-0 right-0 z-100 px-6 py-4 flex items-center justify-between bg-ravens-dark/85 backdrop-blur-md border-b border-ravens-border">
       {/* Logo */}
-      <Link href="/" style={{ textDecoration: 'none' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-          <span style={{
-            fontFamily: 'cursive',
-            fontSize: 20,
-            color: '#fff',
-            fontWeight: 700,
-          }}>Dublin Ravens</span>
-          <span style={{
-            fontSize: 9,
-            letterSpacing: '0.2em',
-            color: '#888',
-            textTransform: 'uppercase',
-          }}>Road Club</span>
-        </div>
+      <Link href="/" className="no-underline flex flex-col leading-tight">
+        <span className="font-bold text-xl text-white" style={{ fontFamily: 'cursive' }}>
+          Dublin Ravens
+        </span>
+        <span className="text-[9px] tracking-widest text-ravens-muted uppercase">
+          Road Club
+        </span>
       </Link>
 
       {/* Desktop links */}
-      <div style={{
-        display: 'flex',
-        gap: 32,
-        alignItems: 'center',
-      }} className="desktop-nav">
+      <div className="hidden md:flex gap-8 items-center">
         <NavLink href="/fixtures">Fixtures</NavLink>
         <NavLink href="/standings">Standings</NavLink>
         <NavLink href="/shop">Shop</NavLink>
-        <Link href="/login" style={{
-          background: '#c8102e',
-          color: '#fff',
-          padding: '8px 20px',
-          borderRadius: 6,
-          fontSize: 13,
-          fontWeight: 600,
-          textDecoration: 'none',
-        }}>Login</Link>
+        <Link
+          href="/login"
+          className="bg-ravens-red text-white px-5 py-2 rounded-md text-sm font-semibold no-underline hover:opacity-90 transition-opacity"
+        >
+          Login
+        </Link>
       </div>
 
       {/* Hamburger */}
       <button
         onClick={() => setOpen(!open)}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          display: 'none',
-          flexDirection: 'column',
-          gap: 5,
-          padding: 4,
-        }}
-        className="hamburger"
+        className="flex md:hidden flex-col gap-1.5 bg-transparent border-none cursor-pointer p-1"
       >
         {[0, 1, 2].map((i) => (
-          <span key={i} style={{
-            display: 'block',
-            width: 24,
-            height: 2,
-            background: '#fff',
-            borderRadius: 2,
-          }} />
+          <span key={i} className="block w-6 h-0.5 bg-white rounded" />
         ))}
       </button>
 
       {/* Mobile menu */}
       {open && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          right: 0,
-          background: '#161616',
-          borderBottom: '1px solid #252525',
-          padding: '16px 24px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-        }}>
+        <div className="absolute top-full left-0 right-0 bg-ravens-surface border-b border-ravens-border px-6 py-4 flex flex-col gap-4 md:hidden">
           <NavLink href="/fixtures" onClick={() => setOpen(false)}>Fixtures</NavLink>
           <NavLink href="/standings" onClick={() => setOpen(false)}>Standings</NavLink>
           <NavLink href="/shop" onClick={() => setOpen(false)}>Shop</NavLink>
@@ -114,13 +60,11 @@ function NavLink({ href, children, onClick }: {
   onClick?: () => void
 }) {
   return (
-    <Link href={href} onClick={onClick} style={{
-      color: '#ccc',
-      textDecoration: 'none',
-      fontSize: 14,
-      fontWeight: 500,
-      letterSpacing: '0.02em',
-    }}>
+    <Link
+      href={href}
+      onClick={onClick}
+      className="text-ravens-muted hover:text-white text-sm font-medium no-underline transition-colors"
+    >
       {children}
     </Link>
   )
