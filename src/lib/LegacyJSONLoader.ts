@@ -8,9 +8,12 @@ export class LegacyJSONLoader {
   ) {
     fetch(url)
       .then((res) => res.json())
-      .then((json) => {
-        const geometry = this.parse(json)
-        const materials = this.parseMaterials(json.materials || [])
+      .then((json: unknown) => {
+        const data = json as Record<string, unknown>
+        const geometry = this.parse(data)
+        const materials = this.parseMaterials(
+          (data.materials as Record<string, unknown>[]) || []
+        )
         onLoad(geometry, materials)
       })
       .catch((err) => {
@@ -19,14 +22,13 @@ export class LegacyJSONLoader {
       })
   }
 
-  parse(json: any): THREE.BufferGeometry {
+  parse(data: Record<string, unknown>): THREE.BufferGeometry {
     const geometry = new THREE.BufferGeometry()
-    const vertices = json.vertices || []
-    const faces = json.faces || []
-    const uvs = json.uvs?.[0] || []
+    const vertices = (data.vertices as number[]) || []
+    const faces = (data.faces as number[]) || []
+    const uvs = ((data.uvs as number[][])?.[0]) || []
 
     const positions: number[] = []
-    const normals: number[] = []
     const uvsOut: number[] = []
     const indices: number[] = []
 
@@ -48,6 +50,10 @@ export class LegacyJSONLoader {
 
       if (hasMaterial) i++
       if (hasFaceUv) i++
+
+      // suppress unused warnings
+      void hasFaceNormal
+      void hasFaceVertexNormal
 
       let uvA = [0, 0], uvB = [0, 0], uvC = [0, 0], uvD = [0, 0]
       if (hasFaceVertexUv) {
@@ -97,11 +103,12 @@ export class LegacyJSONLoader {
     return geometry
   }
 
-  parseMaterials(materials: any[]): THREE.Material[] {
+  parseMaterials(materials: Record<string, unknown>[]): THREE.Material[] {
     return materials.map((m) => {
+      const colorDiffuse = m.colorDiffuse as number[] | undefined
       return new THREE.MeshStandardMaterial({
-        color: m.colorDiffuse
-          ? new THREE.Color(m.colorDiffuse[0], m.colorDiffuse[1], m.colorDiffuse[2])
+        color: colorDiffuse
+          ? new THREE.Color(colorDiffuse[0], colorDiffuse[1], colorDiffuse[2])
           : new THREE.Color(0xffffff),
         side: THREE.DoubleSide,
       })

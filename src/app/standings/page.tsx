@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -54,8 +54,6 @@ function StatPill({ label, value }: { label: string; value: number | string }) {
   )
 }
 
-// ─── Round points mini-chart ──────────────────────────────────────────────────
-
 function RoundPointsRow({ rounds }: { rounds: RoundDetail[] }) {
   if (!rounds?.length) return null
   return (
@@ -74,36 +72,23 @@ function RoundPointsRow({ rounds }: { rounds: RoundDetail[] }) {
   )
 }
 
-// ─── Row ──────────────────────────────────────────────────────────────────────
-
 function StandingRow({ s, showRounds }: { s: Standing; showRounds: boolean }) {
   return (
     <li className="group rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md">
       <div className="flex items-start gap-4">
-        {/* Rank */}
         <div className="flex w-8 shrink-0 items-center justify-center pt-0.5">
           <RankBadge rank={s.rank} />
         </div>
-
-        {/* Rider info */}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="truncate font-semibold text-gray-900">{s.rider_name}</span>
-            <span
-              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                CATEGORY_COLOURS[s.category] ?? 'bg-gray-100 text-gray-600'
-              }`}
-            >
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${CATEGORY_COLOURS[s.category] ?? 'bg-gray-100 text-gray-600'}`}>
               {s.category}
             </span>
           </div>
-          {s.team && (
-            <p className="mt-0.5 truncate text-sm text-gray-500">{s.team}</p>
-          )}
+          {s.team && <p className="mt-0.5 truncate text-sm text-gray-500">{s.team}</p>}
           {showRounds && <RoundPointsRow rounds={s.round_details} />}
         </div>
-
-        {/* Stats */}
         <div className="flex shrink-0 flex-wrap items-center gap-1.5">
           <StatPill label="PTS" value={s.total_points} />
           <StatPill label="Wins" value={s.wins} />
@@ -114,8 +99,6 @@ function StandingRow({ s, showRounds }: { s: Standing; showRounds: boolean }) {
     </li>
   )
 }
-
-// ─── Skeleton loader ──────────────────────────────────────────────────────────
 
 function SkeletonRow() {
   return (
@@ -136,14 +119,12 @@ function SkeletonRow() {
   )
 }
 
-// ─── Category filter tabs ─────────────────────────────────────────────────────
-
 const CATEGORIES = ['All', 'C1', 'C2', 'C3'] as const
 type Filter = (typeof CATEGORIES)[number]
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Inner component (uses useSearchParams) ───────────────────────────────────
 
-export default function StandingsPage() {
+function StandingsContent() {
   const searchParams = useSearchParams()
   const seriesId = searchParams.get('seriesId') ?? 'default'
 
@@ -168,27 +149,19 @@ export default function StandingsPage() {
       .finally(() => setLoading(false))
   }, [seriesId])
 
-  const filtered =
-    filter === 'All' ? standings : standings.filter((s) => s.category === filter)
-
-  // Detect whether any round_details exist at all
+  const filtered = filter === 'All' ? standings : standings.filter((s) => s.category === filter)
   const hasRoundData = standings.some((s) => s.round_details?.length)
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-10">
       <div className="mx-auto max-w-3xl">
-        {/* Header */}
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-              Series Standings
-            </h1>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Series Standings</h1>
             <p className="mt-1 text-sm text-gray-500">
               Series <code className="rounded bg-gray-100 px-1">{seriesId}</code>
             </p>
           </div>
-
-          {/* Round points toggle */}
           {hasRoundData && (
             <button
               onClick={() => setShowRounds((v) => !v)}
@@ -199,24 +172,18 @@ export default function StandingsPage() {
           )}
         </div>
 
-        {/* Category filter */}
         <div className="mb-4 flex gap-1 rounded-xl bg-gray-100 p-1 w-fit">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setFilter(cat)}
-              className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
-                filter === cat
-                  ? 'bg-white shadow text-gray-900'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${filter === cat ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
             >
               {cat}
             </button>
           ))}
         </div>
 
-        {/* List */}
         {loading ? (
           <ul className="space-y-2">
             {[...Array(6)].map((_, i) => <SkeletonRow key={i} />)}
@@ -229,9 +196,7 @@ export default function StandingsPage() {
           <div className="rounded-xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center">
             <p className="text-2xl">🏁</p>
             <p className="mt-2 font-semibold text-gray-700">No results yet</p>
-            <p className="mt-1 text-sm text-gray-400">
-              Check back after Round 1
-            </p>
+            <p className="mt-1 text-sm text-gray-400">Check back after Round 1</p>
           </div>
         ) : (
           <ul className="space-y-2">
@@ -241,7 +206,6 @@ export default function StandingsPage() {
           </ul>
         )}
 
-        {/* Footer count */}
         {!loading && !error && filtered.length > 0 && (
           <p className="mt-4 text-center text-xs text-gray-400">
             {filtered.length} rider{filtered.length !== 1 ? 's' : ''}
@@ -250,5 +214,19 @@ export default function StandingsPage() {
         )}
       </div>
     </main>
+  )
+}
+
+// ─── Page export (wraps in Suspense) ─────────────────────────────────────────
+
+export default function StandingsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen text-gray-500">
+        Loading standings…
+      </div>
+    }>
+      <StandingsContent />
+    </Suspense>
   )
 }
