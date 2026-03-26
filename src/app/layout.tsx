@@ -15,9 +15,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body style={{ background: '#0f0f0f', margin: 0, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <body
+        className="min-h-screen flex flex-col m-0"
+        style={{
+          background: 'linear-gradient(180deg, #000000 0%, #292450 25%, #2C2865 50%, #464775 75%, #E1E7FF 100%)',
+        }}
+      >
         <Nav />
-        <main style={{ flex: 1, paddingTop: 65 }}>
+        <main className="flex-1 pt-16">
           {children}
         </main>
         <Footer />
