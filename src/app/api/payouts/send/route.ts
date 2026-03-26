@@ -8,7 +8,6 @@ type ResultWithRider = {
   rider_id: string
   riders: {
     email: string
-    paypal_email: string | null
   }
 }
 
@@ -27,7 +26,7 @@ export async function POST(req: NextRequest) {
   // Fetch all pending cash results for this fixture
   const { data: results, error } = await supabase
     .from('results')
-    .select('id, prize_amount, rider_id, riders(email, paypal_email)')
+    .select('id, prize_amount, rider_id, riders(email)')
     .eq('fixture_id', fixture_id)
     .eq('payout_status', 'pending')
     .gt('prize_amount', 0)
@@ -41,12 +40,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'No pending payouts found' })
   }
 
-  // Split into PayPal-eligible and manual
+  // Split into PayPal-eligible (has email) and manual
   const eligible: ResultWithRider[] = []
   const manual: ResultWithRider[] = []
 
   for (const r of results) {
-    if (r.riders?.paypal_email) {
+    if (r.riders?.email) {
       eligible.push(r)
     } else {
       manual.push(r)
@@ -59,7 +58,7 @@ export async function POST(req: NextRequest) {
   if (eligible.length > 0) {
     batchId = await sendPayouts(
       eligible.map((r) => ({
-        email: r.riders.paypal_email as string,
+        email: r.riders.email,
         amount: r.prize_amount,
         riderId: r.rider_id,
       }))
@@ -72,7 +71,7 @@ export async function POST(req: NextRequest) {
       .in('id', eligible.map((r) => r.id))
   }
 
-  // Flag manual payouts
+  // Flag manual payouts — no email on file
   if (manual.length > 0) {
     await supabase
       .from('results')
