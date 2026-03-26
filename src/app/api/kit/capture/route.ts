@@ -3,15 +3,11 @@ import { createClient } from '@supabase/supabase-js'
 import { resend } from '@/lib/email'
 import { getAccessToken, PAYPAL_API } from '@/lib/paypal'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-// POST /api/kit/capture
-// Captures a PayPal payment after customer approval
-// Inserts order into kit_orders and sends confirmation email
 export async function POST(req: NextRequest) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
   try {
     const {
       paypal_order_id, product_id, size, quantity,

@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
 type ScoringTemplate = {
   points_per_position: { position: number; points: number }[]
   has_first_lady: boolean
@@ -37,6 +32,10 @@ type RequestBody = {
 // Core race engine — calculates points and prizes, inserts results,
 // triggers payouts and winner emails
 export async function POST(req: NextRequest) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
   try {
     const body: RequestBody = await req.json()
     const {
