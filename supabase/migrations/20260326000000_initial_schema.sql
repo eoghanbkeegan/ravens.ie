@@ -121,6 +121,38 @@ JOIN fixtures f ON r.fixture_id = f.id
 GROUP BY r.rider_id, ri.name, ri.team, ri.category, f.series_id
 ORDER BY rank;
 
+-- 7. KIT PRODUCTS
+-- Catalogue of kit items available for purchase (made to order, no stock limits)
+CREATE TABLE kit_products (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,                        -- e.g. 'DRRC Jersey 2026'
+  description text,
+  price decimal(10,2) NOT NULL,
+  sizes text[] DEFAULT '{XS,S,M,L,XL,2XL}',
+  images text[],                             -- Supabase Storage URLs
+  product_type text DEFAULT 'preorder' CHECK (product_type IN ('preorder','instock')),
+  order_window_open timestamptz,             -- when ordering opens
+  order_window_close timestamptz,            -- when ordering closes
+  active boolean DEFAULT true,               -- show/hide on frontend
+  created_at timestamptz DEFAULT now()
+);
+
+-- 8. KIT ORDERS
+-- One row per order placed through the website
+CREATE TABLE kit_orders (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id uuid REFERENCES kit_products(id),
+  buyer_name text NOT NULL,
+  buyer_email text NOT NULL,
+  delivery_address text NOT NULL,
+  size text NOT NULL,
+  quantity int DEFAULT 1,
+  amount_paid decimal(10,2) NOT NULL,
+  paypal_order_id text,                      -- PayPal reference
+  status text DEFAULT 'paid' CHECK (status IN ('paid','fulfilled','refunded')),
+  created_at timestamptz DEFAULT now()       -- this is your placed timestamp
+);
+
 -- ============================================================
 -- SEED DATA
 -- ============================================================
