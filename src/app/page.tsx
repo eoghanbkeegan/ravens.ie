@@ -1,8 +1,13 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@supabase/supabase-js'
+import nextDynamic from 'next/dynamic'
 
 export const dynamic = 'force-dynamic'
+
+const InstagramFeed = nextDynamic(() => import('@/components/InstagramFeed'), {
+  ssr: false,
+})
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -187,7 +192,10 @@ export default async function HomePage() {
           ))}
         </div>
       </div>
-
+{/* ── INSTAGRAM FEED ───────────────────────────────────────── */}
+<section className="py-16 px-6 border-t border-white/6" style={{ background: '#0A0A0A' }}>
+  <InstagramFeed />
+</section>
       {/* ── ABOUT ─────────────────────────────────────────────────── */}
       <section id="about" className="py-24 px-6" style={{ background: '#0A0A0A' }}>
         <div className="max-w-5xl mx-auto">
