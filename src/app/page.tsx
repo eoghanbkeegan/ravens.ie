@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
@@ -345,21 +346,38 @@ export default async function HomePage() {
       {/* ── KIT SECTION ───────────────────────────────────────────── */}
       <section id="kit" className="py-24 px-6 text-center relative overflow-hidden"
         style={{ background: 'linear-gradient(180deg, #0A0A0A 0%, #1E1A50 30%, #1B1B4B 50%, #1E1A50 70%, #0A0A0A 100%)' }}>
-        <div className="relative z-10 max-w-2xl mx-auto">
+        <div className="relative z-10 max-w-4xl mx-auto">
           <div className="text-xs font-semibold tracking-[0.15em] uppercase text-indigo-400 mb-4">Club Kit</div>
           <h2 className="text-4xl font-bold tracking-tight mb-4">Wear the Ravens</h2>
-          <p className="text-ravens-muted leading-relaxed mb-10">
-            Custom Gobik CX UNI kit. Designed for performance. Built for the road.
+          <p className="text-ravens-muted leading-relaxed mb-12 max-w-xl mx-auto">
+            Custom Gobik kit. Designed for performance. Built for the road.
             Order during the open window — made to order.
           </p>
-          <div className="flex justify-center gap-6 mb-10 flex-wrap">
-            {['Jersey — Front', 'Jersey — Rear', 'Bib Shorts'].map(item => (
-              <div key={item}
-                className="w-44 h-56 bg-white/6 border border-white/10 rounded-xl flex items-center justify-center text-ravens-muted text-sm hover:bg-white/10 hover:-translate-y-1.5 transition-all">
-                {item}
-              </div>
+
+          <div className="flex justify-center gap-8 mb-12 flex-wrap items-end">
+            {[
+              { src: '/kit/jersey-short-sleeve-front.png', label: 'CX UNI Jersey', desc: 'Short Sleeve' },
+              { src: '/kit/jersey-sleeveless-front.png', label: 'Plus Vest', desc: 'Sleeveless' },
+              { src: '/kit/jersey-bib-combo.png', label: 'Full Kit', desc: 'Jersey & Bibs' },
+            ].map(item => (
+              <Link key={item.label} href="/kit"
+                className="group flex flex-col items-center gap-3 no-underline">
+                <div className="relative w-48 h-64 rounded-xl overflow-hidden border border-white/10 bg-black/40 backdrop-blur-sm group-hover:border-indigo-500/50 group-hover:-translate-y-2 transition-all">
+                  <Image
+                    src={item.src}
+                    alt={item.label}
+                    fill
+                    className="object-contain p-2"
+                  />
+                </div>
+                <div className="text-center">
+                  <p className="text-white font-semibold text-sm">{item.label}</p>
+                  <p className="text-ravens-muted text-xs">{item.desc}</p>
+                </div>
+              </Link>
             ))}
           </div>
+
           <Link href="/kit"
             className="inline-flex items-center gap-2 px-8 py-3.5 bg-white text-ravens-dark font-semibold rounded-lg text-sm no-underline hover:-translate-y-0.5 transition-transform">
             Pre-order kit →
