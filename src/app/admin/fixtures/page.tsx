@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@supabase/supabase-js'
+
 
 type Series = { id: string; name: string; year: number }
 type Fixture = {
@@ -18,7 +19,10 @@ const STATUSES = ['upcoming', 'completed', 'cancelled']
 const ALL_CATEGORIES = ['C1', 'C2', 'C3']
 
 export default function AdminFixturesPage() {
-  const supabase = createClient()
+       const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   const [fixtures, setFixtures] = useState<Fixture[]>([])
   const [series, setSeries] = useState<Series[]>([])
@@ -36,7 +40,7 @@ export default function AdminFixturesPage() {
   const [seriesId, setSeriesId] = useState('')
   const [categories, setCategories] = useState<string[]>(['C1', 'C2', 'C3'])
   const [marshalsNeeded, setMarshalsNeeded] = useState(0)
-
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     async function load() {
       const [{ data: f }, { data: s }] = await Promise.all([

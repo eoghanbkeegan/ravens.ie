@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from '@supabase/supabase-js'
+
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -69,7 +70,10 @@ function fmtDate(iso: string) {
 // Auth guard — ⚠️ ASSUMPTION: middleware blocks non-admins at /admin/*
 // ---------------------------------------------------------------------------
 export default function AdminResultsPage() {
-  const supabase = createClient();
+      const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   const [fixtures]                        = useState<Fixture[]>(HARDCODED_FIXTURES);
   const [riders, setRiders]               = useState<Rider[]>([]);
@@ -81,6 +85,8 @@ export default function AdminResultsPage() {
   // Load riders on mount
   // ⚠️ ASSUMPTION: "riders" table with id, name columns
   // -------------------------------------------------------------------------
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     async function load() {
       setLoadingRiders(true);
@@ -233,8 +239,9 @@ export default function AdminResultsPage() {
       const result = await res.json();
       toast.success(`Results published — ${result.results_created} rows created.`);
       setForm(emptyForm());
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to publish results");
+ } catch (err: unknown) {
+  const message = err instanceof Error ? err.message : "Failed to publish results"
+  toast.error(message)
     } finally {
       setPublishing(false);
     }
