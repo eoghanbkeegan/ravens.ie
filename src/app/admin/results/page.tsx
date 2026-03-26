@@ -13,15 +13,15 @@ import { toast } from "sonner";
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-type Fixture = { id: string; name: string; date: string };
+type Fixture = { id: string; title: string; date: string };
 type Rider   = { id: string; name: string };
 
 type ResultsFormState = {
   fixtureId: string;
-  positions: (string | null)[];       // indices 0–5 → P1–P6, values are rider_id
+  positions: (string | null)[];
   ladyInTop6: boolean | null;
-  ladyPosition: number | null;        // 1–6 if ladyInTop6 = true
-  firstLadyId: string | null;         // rider_id if ladyInTop6 = false
+  ladyPosition: number | null;
+  firstLadyId: string | null;
   firstJuniorId: string | null;
   juniorInTop6: boolean | null;
   firstC2Id: string | null;
@@ -47,17 +47,6 @@ const emptyForm = (): ResultsFormState => ({
   prime1Position: null, prime2Position: null,
 });
 
-// ⚠️ TEMPORARY: hardcoded until Supabase fixtures table is ready
-const HARDCODED_FIXTURES: Fixture[] = [
-  { id: "1", name: "Round 1", date: "2025-04-29T19:30:00" },
-  { id: "2", name: "Round 2", date: "2025-05-06T19:30:00" },
-  { id: "3", name: "Round 3", date: "2025-05-27T19:30:00" },
-  { id: "4", name: "Round 4", date: "2025-06-17T19:30:00" },
-  { id: "5", name: "Round 5", date: "2025-07-29T19:30:00" },
-  { id: "6", name: "Round 6", date: "2025-08-12T19:30:00" },
-  { id: "7", name: "Round 7", date: "2025-08-19T19:00:00" },
-];
-
 function fmtDate(iso: string) {
   const d = new Date(iso);
   return `${d.toLocaleDateString("en-GB", {
@@ -65,45 +54,60 @@ function fmtDate(iso: string) {
   })}, ${d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-// ---------------------------------------------------------------------------
-// Auth guard — ⚠️ ASSUMPTION: middleware blocks non-admins at /admin/*
-// ---------------------------------------------------------------------------
 export default function AdminResultsPage() {
   const supabase = createClient();
 
-  const [fixtures]                        = useState<Fixture[]>(HARDCODED_FIXTURES);
+  const [fixtures, setFixtures]           = useState<Fixture[]>([]);
   const [riders, setRiders]               = useState<Rider[]>([]);
   const [form, setForm]                   = useState<ResultsFormState>(emptyForm());
   const [loadingRiders, setLoadingRiders] = useState(false);
   const [publishing, setPublishing]       = useState(false);
 
-  // -------------------------------------------------------------------------
-  // Load riders on mount
-  // ⚠️ ASSUMPTION: "riders" table with id, name columns
-  // -------------------------------------------------------------------------
+  // Load fixtures and riders from Supabase
   useEffect(() => {
     async function load() {
       setLoadingRiders(true);
-      const { data, error } = await supabase
-        .from("riders")
-        .select("id, name")
-        .order("name");
-      if (error) toast.error("Failed to load riders");
-      else setRiders(data ?? []);
+
+      const [{ data: ridersData, error: ridersError }, { data: fixturesData }] =
+        await Promise.all([
+          supabase.from("riders").select("id, name").order("name"),
+          supabase.from("fixtures").select("id, title, date").order("date", { ascending: false }),
+        ]);
+
+      if (ridersError) toast.error("Failed to load riders");
+      else setRiders(ridersData ?? []);
+
+      setFixtures(fixturesData ?? []);
       setLoadingRiders(false);
     }
     load();
   }, []);
 
-  // -------------------------------------------------------------------------
-  // Derived state
-  // -------------------------------------------------------------------------
+  // When fixture changes, reload riders for that fixture
+  useEffect(() => {
+    if (!form.fixtureId) return;
+    async function loadFixtureRiders() {
+      setLoadingRiders(true);
+      const { data, error } = await supabase
+        .from("fixture_riders")
+        .select("riders (id, name)")
+        .eq("fixture_id", form.fixtureId);
+
+      if (error) toast.error("Failed to load fixture riders");
+      else {
+        const flat = (data ?? [])
+          .map((r: any) => r.riders)
+          .filter(Boolean) as Rider[];
+        setRiders(flat.length > 0 ? flat : riders);
+      }
+      setLoadingRiders(false);
+    }
+    loadFixtureRiders();
+  }, [form.fixtureId]);
+
   const allPositionsFilled = form.positions.every((p) => p !== null);
   const bothPrimesSelected = !!form.prime1Id && !!form.prime2Id;
 
-  // -------------------------------------------------------------------------
-  // Helpers
-  // -------------------------------------------------------------------------
   function setPosition(i: number, v: string | null) {
     setForm((p) => {
       const next = [...p.positions];
@@ -123,8 +127,6 @@ export default function AdminResultsPage() {
     return riders.find((r) => r.id === id)?.name ?? id;
   }
 
-  // Derive the lady's rider_id regardless of whether she's in top 6.
-  // route.ts handles the distinction via placedRiderIds server-side.
   function resolveLadyId(): string | undefined {
     if (form.ladyInTop6 === true && form.ladyPosition !== null) {
       return form.positions[form.ladyPosition - 1] ?? undefined;
@@ -135,9 +137,6 @@ export default function AdminResultsPage() {
     return undefined;
   }
 
-  // -------------------------------------------------------------------------
-  // Validation
-  // -------------------------------------------------------------------------
   function isFormValid(): boolean {
     if (!form.fixtureId || !form.positions[0] || !allPositionsFilled) return false;
     if (form.ladyInTop6 === null) return false;
@@ -172,30 +171,19 @@ export default function AdminResultsPage() {
     return "Ready to publish.";
   }
 
-  // -------------------------------------------------------------------------
-  // Build payload matching route.ts RequestBody exactly
-  // -------------------------------------------------------------------------
   function buildPayload() {
     const finishers = form.positions
       .map((rider_id, i) => ({ rider_id: rider_id!, position: i + 1 }))
       .filter((f) => f.rider_id);
 
     const placedIds = new Set(finishers.map((f) => f.rider_id));
-
-    // first_lady_id: always send the rider ID; route checks placedRiderIds itself
     const first_lady_id = resolveLadyId();
-
-    // first_junior_id: always the selected junior rider
     const first_junior_id = form.firstJuniorId ?? undefined;
 
-    // prime_winners: prime_name must match the name field in scoring_templates.primes
-    // ⚠️ ASSUMPTION: primes are named "Prime 1" and "Prime 2" in the scoring template
     const prime_winners: { rider_id: string; prime_name: string }[] = [];
     if (form.prime1Id) prime_winners.push({ rider_id: form.prime1Id, prime_name: "Prime 1" });
     if (form.prime2Id) prime_winners.push({ rider_id: form.prime2Id, prime_name: "Prime 2" });
 
-    // unplaced_rider_ids: C2 and C3 winners if not already in top 6
-    // route.ts fetches their category from riders table and awards unplaced_points accordingly
     const unplaced_rider_ids: string[] = [];
     if (form.firstC2Id && !placedIds.has(form.firstC2Id)) unplaced_rider_ids.push(form.firstC2Id);
     if (form.firstC3Id && !placedIds.has(form.firstC3Id)) unplaced_rider_ids.push(form.firstC3Id);
@@ -210,15 +198,11 @@ export default function AdminResultsPage() {
     };
   }
 
-  // -------------------------------------------------------------------------
-  // Publish
-  // -------------------------------------------------------------------------
   async function handlePublish() {
     if (!isFormValid()) return;
     setPublishing(true);
     try {
       const payload = buildPayload();
-
       const res = await fetch("/api/results/calculate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -240,9 +224,6 @@ export default function AdminResultsPage() {
     }
   }
 
-  // -------------------------------------------------------------------------
-  // Reusable rider selector
-  // -------------------------------------------------------------------------
   function RiderSelect({
     id, value, onChange, placeholder = "Select rider…", exclude = new Set<string>(),
   }: {
@@ -275,7 +256,6 @@ export default function AdminResultsPage() {
     );
   }
 
-  // Position dropdown — shows filled P1–P6 slots with rider names
   function PositionSelect({
     value, onChange,
   }: {
@@ -303,13 +283,9 @@ export default function AdminResultsPage() {
     );
   }
 
-  // -------------------------------------------------------------------------
-  // Render
-  // -------------------------------------------------------------------------
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-8">
 
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Enter Results</h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -319,7 +295,6 @@ export default function AdminResultsPage() {
 
       <Separator />
 
-      {/* ── Fixture ── */}
       <div className="space-y-2">
         <Label htmlFor="fixture-select">Fixture</Label>
         <Select
@@ -332,7 +307,7 @@ export default function AdminResultsPage() {
           <SelectContent>
             {fixtures.map((f) => (
               <SelectItem key={f.id} value={f.id}>
-                {f.name} — {fmtDate(f.date)}
+                {f.title} — {fmtDate(f.date)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -343,7 +318,6 @@ export default function AdminResultsPage() {
         <>
           <Separator />
 
-          {/* ── Winners ── */}
           <div className="space-y-4">
             <div>
               <h2 className="text-base font-semibold">Winners</h2>
@@ -368,7 +342,6 @@ export default function AdminResultsPage() {
             <>
               <Separator />
 
-              {/* ── Lady ── */}
               <div className="space-y-4">
                 <div>
                   <h2 className="text-base font-semibold">Lady</h2>
@@ -415,7 +388,6 @@ export default function AdminResultsPage() {
 
               <Separator />
 
-              {/* ── Junior ── */}
               <div className="space-y-4">
                 <div>
                   <h2 className="text-base font-semibold">Junior</h2>
@@ -455,7 +427,6 @@ export default function AdminResultsPage() {
 
               <Separator />
 
-              {/* ── C2 ── */}
               <div className="space-y-3">
                 <div>
                   <h2 className="text-base font-semibold">C2</h2>
@@ -475,7 +446,6 @@ export default function AdminResultsPage() {
 
               <Separator />
 
-              {/* ── C3 ── */}
               <div className="space-y-3">
                 <div>
                   <h2 className="text-base font-semibold">C3</h2>
@@ -495,7 +465,6 @@ export default function AdminResultsPage() {
 
               <Separator />
 
-              {/* ── Primes ── */}
               <div className="space-y-4">
                 <div>
                   <h2 className="text-base font-semibold">Primes</h2>
@@ -583,9 +552,7 @@ export default function AdminResultsPage() {
 
                         {(form.primesTop6Count === "prime1" || form.primesTop6Count === "both") && (
                           <div className="flex items-center gap-4">
-                            <span className="w-14 shrink-0 text-sm text-muted-foreground">
-                              Prime 1
-                            </span>
+                            <span className="w-14 shrink-0 text-sm text-muted-foreground">Prime 1</span>
                             <PositionSelect
                               value={form.prime1Position}
                               onChange={(v) => setForm((p) => ({ ...p, prime1Position: v }))}
@@ -594,9 +561,7 @@ export default function AdminResultsPage() {
                         )}
                         {(form.primesTop6Count === "prime2" || form.primesTop6Count === "both") && (
                           <div className="flex items-center gap-4">
-                            <span className="w-14 shrink-0 text-sm text-muted-foreground">
-                              Prime 2
-                            </span>
+                            <span className="w-14 shrink-0 text-sm text-muted-foreground">Prime 2</span>
                             <PositionSelect
                               value={form.prime2Position}
                               onChange={(v) => setForm((p) => ({ ...p, prime2Position: v }))}
@@ -611,7 +576,6 @@ export default function AdminResultsPage() {
 
               <Separator />
 
-              {/* ── Publish ── */}
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">{statusHint()}</p>
                 <Button
