@@ -79,7 +79,6 @@ function Badge({ label, colour }: { label: string; colour: string }) {
 
 function ResultRow({ result, index }: { result: Result; index: number }) {
   const isPlaced  = result.position != null
-  const isTopSix  = isPlaced && result.position! <= 6
   const rowBg     = index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
 
   return (

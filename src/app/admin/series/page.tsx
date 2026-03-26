@@ -35,6 +35,7 @@ export default function AdminSeriesPage() {
       setLoading(false)
     }
     load()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function resetForm() {

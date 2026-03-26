@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 
 type Product = {
   id: string
@@ -31,7 +32,6 @@ export default function KitShopPage() {
       const res = await fetch('/api/kit/products')
       const data = await res.json()
       const now = new Date()
-      // Filter to products within their order window
       const available = (data.products ?? []).filter((p: Product) => {
         if (!p.order_window_open && !p.order_window_close) return true
         const open = p.order_window_open ? new Date(p.order_window_open) : null
@@ -75,7 +75,6 @@ export default function KitShopPage() {
     setCheckingOut(product.id)
 
     try {
-      // Step 1 — create PayPal order
       const checkoutRes = await fetch('/api/kit/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -87,15 +86,14 @@ export default function KitShopPage() {
         }),
       })
 
-      const { paypal_order_id, error: checkoutError } = await checkoutRes.json()
-      if (checkoutError) throw new Error(checkoutError)
+      const checkoutData = await checkoutRes.json() as { paypal_order_id?: string; error?: string }
+      if (checkoutData.error) throw new Error(checkoutData.error)
 
-      // Step 2 — capture payment
       const captureRes = await fetch('/api/kit/capture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          paypal_order_id,
+          paypal_order_id: checkoutData.paypal_order_id,
           product_id: product.id,
           size,
           quantity,
@@ -106,8 +104,8 @@ export default function KitShopPage() {
         }),
       })
 
-      const { error: captureError } = await captureRes.json()
-      if (captureError) throw new Error(captureError)
+      const captureData = await captureRes.json() as { error?: string }
+      if (captureData.error) throw new Error(captureData.error)
 
       setSuccess(`Order placed successfully! Check ${buyerEmail} for your confirmation.`)
       setBuyerName('')
@@ -115,8 +113,9 @@ export default function KitShopPage() {
       setDeliveryAddress('')
       setSelectedSizes({})
       setQuantities({})
-    } catch (err: any) {
-      setError(err.message ?? 'Something went wrong. Please try again.')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.'
+      setError(message)
     } finally {
       setCheckingOut(null)
     }
@@ -131,7 +130,6 @@ export default function KitShopPage() {
   return (
     <div className="min-h-screen bg-ravens-dark">
       <div className="max-w-4xl mx-auto px-4 py-12 space-y-10">
-
         <div>
           <h1 className="text-3xl font-bold text-white">Kit Shop</h1>
           <p className="text-ravens-muted mt-2">Order your DRRC kit below.</p>
@@ -156,13 +154,13 @@ export default function KitShopPage() {
           </div>
         ) : (
           <>
-            {/* Products */}
             <div className="grid gap-6 sm:grid-cols-2">
               {products.map(p => (
                 <div key={p.id} className="bg-ravens-surface border border-ravens-border rounded-lg overflow-hidden">
-                  {/* Image placeholder */}
                   {p.images && p.images.length > 0 ? (
-                    <img src={p.images[0]} alt={p.name} className="w-full h-48 object-cover" />
+                    <div className="relative w-full h-48">
+                      <Image src={p.images[0]} alt={p.name} fill className="object-cover" />
+                    </div>
                   ) : (
                     <div className="w-full h-48 bg-ravens-dark flex items-center justify-center">
                       <span className="text-ravens-muted text-sm">No image</span>
@@ -180,14 +178,12 @@ export default function KitShopPage() {
                       <span className="text-white font-bold text-lg">€{p.price.toFixed(2)}</span>
                     </div>
 
-                    {/* Order window */}
                     {p.order_window_close && (
                       <p className="text-xs text-ravens-muted">
                         Order window closes {formatWindowDate(p.order_window_close)}
                       </p>
                     )}
 
-                    {/* Size selector */}
                     <div className="space-y-1">
                       <label className="text-xs text-ravens-muted">Size</label>
                       <div className="flex gap-2 flex-wrap">
@@ -207,7 +203,6 @@ export default function KitShopPage() {
                       </div>
                     </div>
 
-                    {/* Quantity */}
                     <div className="space-y-1">
                       <label className="text-xs text-ravens-muted">Quantity</label>
                       <input
@@ -224,11 +219,9 @@ export default function KitShopPage() {
               ))}
             </div>
 
-            {/* Buyer details */}
             <div className="bg-ravens-surface border border-ravens-border rounded-lg p-6 space-y-4">
               <h2 className="text-white font-semibold">Your Details</h2>
               <p className="text-ravens-muted text-sm">Fill in your details once to apply to all orders.</p>
-
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label className="text-sm text-ravens-muted">Full Name</label>
@@ -250,7 +243,6 @@ export default function KitShopPage() {
                   />
                 </div>
               </div>
-
               <div className="space-y-1">
                 <label className="text-sm text-ravens-muted">Delivery Address</label>
                 <textarea
@@ -263,7 +255,6 @@ export default function KitShopPage() {
               </div>
             </div>
 
-            {/* Order buttons per product */}
             <div className="space-y-3">
               {products.map(p => (
                 <div key={p.id} className="flex items-center justify-between bg-ravens-surface border border-ravens-border rounded-lg px-4 py-3">
