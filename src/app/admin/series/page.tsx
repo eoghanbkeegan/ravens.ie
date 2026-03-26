@@ -1,12 +1,15 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@supabase/supabase-js'
 
 type ScoringTemplate = { id: string; name: string }
 type Series = { id: string; name: string; year: number; scoring_template_id: string }
 
 export default function AdminSeriesPage() {
-  const supabase = createClient()
+ const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
   const [series, setSeries] = useState<Series[]>([])
   const [templates, setTemplates] = useState<ScoringTemplate[]>([])

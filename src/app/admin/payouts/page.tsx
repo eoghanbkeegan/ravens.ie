@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from '@supabase/supabase-js'
 import { useRouter } from "next/navigation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ interface Result {
   payout_status: PayoutStatus;
   payout_batch_id: string | null;
   // joined
-  riders?: Rider;
+  riders?: Rider|Rider[];
 }
 
 interface FixtureGroup {
@@ -125,7 +125,10 @@ function FixtureSummary({ results }: { results: Result[] }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function PayoutsPage() {
-  const supabase = createClientComponentClient();
+    const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
   const router   = useRouter();
 
   const [groups,    setGroups]    = useState<FixtureGroup[]>([]);
@@ -194,13 +197,16 @@ export default function PayoutsPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   // ── Toggle expand ────────────────────────────────────────────────────────────
-  const toggleExpand = (id: string) =>
-    setExpanded(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-
+const toggleExpand = (id: string) =>
+  setExpanded(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) {
+      next.delete(id)
+    } else {
+      next.add(id)
+    }
+    return next;
+  });
   // ── Filtered view ────────────────────────────────────────────────────────────
   const visibleGroups = groups
     .map(g => ({
@@ -287,7 +293,7 @@ export default function PayoutsPage() {
             onClick={() => setOnlyFailed(false)}
             className="text-xs px-3 py-1.5 rounded-full border font-medium bg-red-600 text-white border-red-600"
           >
-            ✕ Clear "Failed only"
+            ✕ Clear &quot;Failed only&quot;
           </button>
         )}
       </div>

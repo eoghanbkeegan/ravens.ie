@@ -2,7 +2,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@supabase/supabase-js'
 
 type Fixture = {
   id: string
@@ -27,7 +27,10 @@ type ImportResult = {
 }
 
 export default function RidersPage() {
-  const supabase = createClient()
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
   const [fixtures, setFixtures] = useState<Fixture[]>([])
   const [selectedFixtureId, setSelectedFixtureId] = useState('')
@@ -40,6 +43,7 @@ export default function RidersPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Load fixtures on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     supabase
       .from('fixtures')
@@ -49,6 +53,7 @@ export default function RidersPage() {
   }, [])
 
   // Load riders when fixture changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!selectedFixtureId) {
       setRiders([])
@@ -61,9 +66,14 @@ export default function RidersPage() {
       .select('riders (id, name, team, category, email, cycling_ireland_num)')
       .eq('fixture_id', selectedFixtureId)
       .then(({ data }) => {
-        const flat = (data ?? [])
-          .map((r) => r.riders)
-          .filter(Boolean) as Rider[]
+const flat = (data ?? [])
+  .flatMap((r) => {
+    const rider = r.riders
+    if (!rider) return []
+    return Array.isArray(rider) ? rider : [rider]
+  })
+  .filter((r): r is Rider => r !== null && r !== undefined)
+setRiders(flat as Rider[])
         setRiders(flat)
         setLoadingRiders(false)
       })
@@ -104,10 +114,14 @@ export default function RidersPage() {
           .from('fixture_riders')
           .select('riders (id, name, team, category, email, cycling_ireland_num)')
           .eq('fixture_id', selectedFixtureId)
-        const flat = (data ?? [])
-          .map((r) => r.riders)
-          .filter(Boolean) as Rider[]
-        setRiders(flat)
+const flat = (data ?? [])
+  .flatMap((r) => {
+    const rider = r.riders
+    if (!rider) return []
+    return Array.isArray(rider) ? rider : [rider]
+  })
+  .filter((r): r is Rider => r !== null && r !== undefined)
+setRiders(flat as Rider[])
         setLoadingRiders(false)
         setFile(null)
         if (fileInputRef.current) fileInputRef.current.value = ''

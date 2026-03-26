@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from '@supabase/supabase-js'
+
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -55,7 +56,10 @@ function fmtDate(iso: string) {
 }
 
 export default function AdminResultsPage() {
-  const supabase = createClient();
+      const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   const [fixtures, setFixtures]           = useState<Fixture[]>([]);
   const [riders, setRiders]               = useState<Rider[]>([]);
@@ -217,8 +221,9 @@ export default function AdminResultsPage() {
       const result = await res.json();
       toast.success(`Results published — ${result.results_created} rows created.`);
       setForm(emptyForm());
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to publish results");
+ } catch (err: unknown) {
+  const message = err instanceof Error ? err.message : "Failed to publish results"
+  toast.error(message)
     } finally {
       setPublishing(false);
     }
