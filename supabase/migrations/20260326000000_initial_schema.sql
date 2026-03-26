@@ -55,10 +55,20 @@ CREATE TABLE riders (
   name text NOT NULL,
   team text,
   category text,
-  email text,
+  email text,                                 -- used for contact and PayPal Payouts
   cycling_ireland_num text,
-  paypal_email text,
   created_at timestamptz DEFAULT now()
+);
+
+-- 4b. FIXTURE RIDERS
+-- Links riders to specific fixtures (startlist per race)
+-- Populated during Event Master CSV import alongside the riders upsert
+CREATE TABLE fixture_riders (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  fixture_id uuid REFERENCES fixtures(id),
+  rider_id uuid REFERENCES riders(id),
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(fixture_id, rider_id)
 );
 
 -- 5. RESULTS
