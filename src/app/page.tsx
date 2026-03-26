@@ -1,9 +1,10 @@
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+export const revalidate = 0
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@supabase/supabase-js'
 import nextDynamic from 'next/dynamic'
-
-export const dynamic = 'force-dynamic'
 
 const InstagramFeed = nextDynamic(() => import('@/components/InstagramFeed'), {
   ssr: false,
