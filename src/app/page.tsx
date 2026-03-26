@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+export const revalidate = 0
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@supabase/supabase-js'
@@ -37,8 +40,6 @@ type Series = {
   year: number
 }
 
-// ─── Data fetching ────────────────────────────────────────────────────────────
-
 async function getData() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -77,8 +78,6 @@ async function getData() {
   }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function statusStyle(s: string) {
   if (s === 'upcoming') return 'bg-green-900/30 text-green-400'
   if (s === 'completed') return 'bg-white/5 text-ravens-muted'
@@ -110,8 +109,6 @@ const catColour: Record<string, string> = {
 }
 
 const rankMedal: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function HomePage() {
   const { fixtures, series, standings } = await getData()
@@ -195,10 +192,7 @@ export default async function HomePage() {
           ))}
         </div>
       </div>
-{/* ── INSTAGRAM FEED ───────────────────────────────────────── */}
-<section className="py-16 px-6 border-t border-white/6" style={{ background: '#0A0A0A' }}>
-  <InstagramFeed />
-</section>
+
       {/* ── ABOUT ─────────────────────────────────────────────────── */}
       <section id="about" className="py-24 px-6" style={{ background: '#0A0A0A' }}>
         <div className="max-w-5xl mx-auto">
@@ -323,7 +317,6 @@ export default async function HomePage() {
                 Full leaderboard →
               </Link>
             </div>
-
             <div className="space-y-2">
               {standings.map((s) => (
                 <div key={s.rank}
@@ -345,7 +338,6 @@ export default async function HomePage() {
                 </div>
               ))}
             </div>
-
             <div className="mt-6 text-center">
               <Link href={`/standings?seriesId=${series.id}`}
                 className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-semibold rounded-lg text-sm no-underline hover:border-white/50 hover:bg-white/5 transition-all">
@@ -366,7 +358,6 @@ export default async function HomePage() {
             Custom Gobik kit. Designed for performance. Built for the road.
             Order during the open window — made to order.
           </p>
-
           <div className="flex justify-center gap-8 mb-12 flex-wrap items-end">
             {[
               { src: '/kit/jersey-short-sleeve-front.png', label: 'CX UNI Jersey', desc: 'Short Sleeve' },
@@ -376,12 +367,7 @@ export default async function HomePage() {
               <Link key={item.label} href="/kit"
                 className="group flex flex-col items-center gap-3 no-underline">
                 <div className="relative w-48 h-64 rounded-xl overflow-hidden border border-white/10 bg-black/40 backdrop-blur-sm group-hover:border-indigo-500/50 group-hover:-translate-y-2 transition-all">
-                  <Image
-                    src={item.src}
-                    alt={item.label}
-                    fill
-                    className="object-contain p-2"
-                  />
+                  <Image src={item.src} alt={item.label} fill className="object-contain p-2" />
                 </div>
                 <div className="text-center">
                   <p className="text-white font-semibold text-sm">{item.label}</p>
@@ -390,7 +376,6 @@ export default async function HomePage() {
               </Link>
             ))}
           </div>
-
           <Link href="/kit"
             className="inline-flex items-center gap-2 px-8 py-3.5 bg-white text-ravens-dark font-semibold rounded-lg text-sm no-underline hover:-translate-y-0.5 transition-transform">
             Pre-order kit →
