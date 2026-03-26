@@ -54,7 +54,7 @@ export default function JerseyViewer() {
         })
         const mesh = new THREE.Mesh(geometry, material)
         mesh.scale.set(0.03, 0.03, 0.03)
-        mesh.position.set(0, -4, 0)
+        mesh.position.set(0, -3.5, 0)
         mesh.rotation.set(-1, 0, 0)
         scene.add(mesh)
 
