@@ -26,8 +26,7 @@ export default function Nav() {
       }}
     >
       {/* ── Logo ── */}
-      <Link href="/" className="no-underline flex items-center gap-3 group">
-        {/* Raven silhouette — replace this div with <Image> once /public/ravens-logo.png is added */}
+      <Link href="/" className="no-underline flex items-center gap-3">
         <div
           className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
           style={{ background: 'linear-gradient(135deg, #1E1A50, #2D2870)' }}
@@ -37,7 +36,6 @@ export default function Nav() {
             <path d="M12 2C9.5 2 7.5 3.5 6.5 5.5C5.5 5 4 5 3 6c1 0 1.5.5 2 1C4 8.5 4 10 5 11.5c-.5.5-1 1.5-1 2.5 0 1.5 1 2.5 2 3-.5 1-1 2-1 3h2c0-1 .5-2 1-2.5.5.5 1.5 1 2.5 1s2-.5 2.5-1c.5.5 1 1.5 1 2.5h2c0-1-.5-2-1-3 1-.5 2-1.5 2-3 0-1-.5-2-1-2.5 1-1.5 1-3 .5-4.5.5-.5 1-1 2-1-1-1-2.5-1-3.5-.5C16.5 3.5 14.5 2 12 2z" />
           </svg>
         </div>
-
         <div className="flex flex-col leading-none">
           <span
             className="font-bold text-white tracking-tight"
@@ -73,29 +71,18 @@ export default function Nav() {
           )
         })}
 
-        {/* Divider */}
         <div className="w-px h-5 mx-3" style={{ background: 'rgba(255,255,255,0.1)' }} />
 
-        {/* Admin — subtle, not prominent */}
-        <Link
-          href="/admin"
-          className="no-underline px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
-          style={{ color: 'rgba(255,255,255,0.3)' }}
-        >
-          Admin
-        </Link>
-
-        {/* Login CTA */}
         <Link
           href="/login"
-          className="no-underline ml-2 px-4 py-2 rounded-md text-sm font-semibold transition-all"
+          className="no-underline ml-1 px-4 py-2 rounded-md text-sm font-semibold transition-all"
           style={{
             background: 'linear-gradient(135deg, #1E1A50, #2D2870)',
             color: '#ffffff',
             border: '1px solid rgba(255,255,255,0.12)',
           }}
         >
-          Login
+          Admin Login
         </Link>
       </div>
 
@@ -149,32 +136,19 @@ export default function Nav() {
               )
             })}
           </div>
-
-          <div
-            className="mx-4 my-2 h-px"
-            style={{ background: 'rgba(255,255,255,0.06)' }}
-          />
-
-          <div className="px-4 pb-4 flex flex-col gap-2">
-            <Link
-              href="/admin"
-              onClick={() => setOpen(false)}
-              className="no-underline px-3 py-2.5 rounded-md text-sm font-medium"
-              style={{ color: 'rgba(255,255,255,0.4)' }}
-            >
-              Admin
-            </Link>
+          <div className="mx-4 my-2 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+          <div className="px-4 pb-4">
             <Link
               href="/login"
               onClick={() => setOpen(false)}
-              className="no-underline px-4 py-3 rounded-md text-sm font-semibold text-center"
+              className="no-underline block px-4 py-3 rounded-md text-sm font-semibold text-center"
               style={{
                 background: 'linear-gradient(135deg, #1E1A50, #2D2870)',
                 color: '#ffffff',
                 border: '1px solid rgba(255,255,255,0.12)',
               }}
             >
-              Login
+              Admin Login
             </Link>
           </div>
         </div>
