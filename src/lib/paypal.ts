@@ -1,8 +1,8 @@
-const PAYPAL_API = process.env.NODE_ENV === 'production'
+export const PAYPAL_API = process.env.NODE_ENV === 'production'
   ? 'https://api-m.paypal.com'
   : 'https://api-m.sandbox.paypal.com'
 
-async function getAccessToken(): Promise<string> {
+export async function getAccessToken(): Promise<string> {
   const credentials = Buffer.from(
     `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`
   ).toString('base64')

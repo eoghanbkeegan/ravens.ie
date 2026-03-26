@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { resend } from '@/lib/email'
-import { getPayPalAccessToken, PAYPAL_BASE_URL } from '@/lib/paypal'
+import { getAccessToken, PAYPAL_API } from '@/lib/paypal'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,10 +27,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Capture payment — don't save order if this fails
-    const accessToken = await getPayPalAccessToken()
+    const accessToken = await getAccessToken()
 
     const captureRes = await fetch(
-      `${PAYPAL_BASE_URL}/v2/checkout/orders/${paypal_order_id}/capture`,
+      `${PAYPAL_API}/v2/checkout/orders/${paypal_order_id}/capture`,
       {
         method: 'POST',
         headers: {

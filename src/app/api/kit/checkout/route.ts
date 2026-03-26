@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPayPalAccessToken, PAYPAL_BASE_URL } from '@/lib/paypal'
+import { getAccessToken, PAYPAL_API } from '@/lib/paypal'
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,10 +12,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const accessToken = await getPayPalAccessToken()
+    const accessToken = await getAccessToken()
     const total = (price * quantity).toFixed(2)
 
-    const orderRes = await fetch(`${PAYPAL_BASE_URL}/v2/checkout/orders`, {
+    const orderRes = await fetch(`${PAYPAL_API}/v2/checkout/orders`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
