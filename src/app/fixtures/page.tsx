@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
-
+export const fetchCache = 'force-no-store'
+export const revalidate = 0
 import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 
@@ -9,7 +10,7 @@ type Fixture = {
   date: string
   venue: string
   categories: string[]
-  status: 'upcoming' | 'completed' | 'cancelled'
+  status: 'upcoming' | 'completed' | 'cancelled' | null
 }
 
 async function getFixtures(): Promise<Fixture[]> {
@@ -46,11 +47,12 @@ const catColour: Record<string, string> = {
   C3: 'bg-emerald-900/40 text-emerald-300',
 }
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; style: string }> = {
   upcoming: { label: 'Upcoming', style: 'bg-green-900/30 text-green-400 border border-green-800/40' },
   completed: { label: 'Completed', style: 'bg-white/5 text-ravens-muted border border-white/10' },
   cancelled: { label: 'Cancelled', style: 'bg-red-900/30 text-red-400 border border-red-800/40' },
 }
+const DEFAULT_STATUS = { label: 'TBC', style: 'bg-white/5 text-ravens-muted border border-white/10' }
 
 export default async function FixturesPage() {
   const fixtures = await getFixtures()
@@ -58,6 +60,7 @@ export default async function FixturesPage() {
   const upcoming = fixtures.filter(f => f.status === 'upcoming')
   const completed = fixtures.filter(f => f.status === 'completed')
   const cancelled = fixtures.filter(f => f.status === 'cancelled')
+  const tbc = fixtures.filter(f => !f.status || !statusConfig[f.status])
 
   return (
     <div className="min-h-screen" style={{ background: '#0A0A0A' }}>
@@ -127,6 +130,20 @@ export default async function FixturesPage() {
               </div>
             )}
 
+            {/* TBC — catches null status */}
+            {tbc.length > 0 && (
+              <div>
+                <h2 className="text-xs font-semibold tracking-[0.15em] uppercase text-ravens-muted mb-4">
+                  To Be Confirmed
+                </h2>
+                <div className="space-y-3">
+                  {tbc.map(f => (
+                    <FixtureCard key={f.id} fixture={f} />
+                  ))}
+                </div>
+              </div>
+            )}
+
           </div>
         )}
       </div>
@@ -135,7 +152,7 @@ export default async function FixturesPage() {
 }
 
 function FixtureCard({ fixture }: { fixture: Fixture }) {
-  const sc = statusConfig[fixture.status]
+  const sc = (fixture.status && statusConfig[fixture.status]) ? statusConfig[fixture.status] : DEFAULT_STATUS
 
   return (
     <div className="bg-ravens-surface border border-ravens-border rounded-xl px-5 py-4 flex items-center gap-5 group hover:border-indigo-800/50 transition-colors relative overflow-hidden">
@@ -190,7 +207,6 @@ function FixtureCard({ fixture }: { fixture: Fixture }) {
       {/* CTA */}
       <div className="shrink-0">
         {fixture.status === 'upcoming' && (
-          
             <a href="https://eventmaster.ie"
             target="_blank"
             rel="noopener noreferrer"

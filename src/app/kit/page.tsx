@@ -2,16 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import dynamic from 'next/dynamic'
-
-const JerseyViewer = dynamic(() => import('@/components/JerseyViewer'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[600px] flex items-center justify-center">
-      <p className="text-ravens-muted text-sm">Loading kit preview...</p>
-    </div>
-  ),
-})
 
 type Product = {
   id: string
@@ -26,15 +16,22 @@ type Product = {
   active: boolean
 }
 
+type Selection = {
+  product: Product
+  size: string
+  quantity: number
+}
+
 export default function KitShopPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({})
   const [quantities, setQuantities] = useState<Record<string, number>>({})
+  const [modalOpen, setModalOpen] = useState(false)
   const [buyerName, setBuyerName] = useState('')
   const [buyerEmail, setBuyerEmail] = useState('')
   const [deliveryAddress, setDeliveryAddress] = useState('')
-  const [checkingOut, setCheckingOut] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
 
@@ -57,107 +54,118 @@ export default function KitShopPage() {
     load()
   }, [])
 
-  function isOrderWindowOpen(p: Product): boolean {
-    const now = new Date()
-    if (!p.order_window_open && !p.order_window_close) return true
-    const open = p.order_window_open ? new Date(p.order_window_open) : null
-    const close = p.order_window_close ? new Date(p.order_window_close) : null
-    if (open && now < open) return false
-    if (close && now > close) return false
-    return true
-  }
-
   function formatWindowDate(d: string) {
     return new Date(d).toLocaleDateString('en-IE', {
       day: 'numeric', month: 'short', year: 'numeric'
     })
   }
 
-  async function handleCheckout(product: Product) {
-    const size = selectedSizes[product.id]
-    const quantity = quantities[product.id] ?? 1
+  // Items that have a size selected
+  const selectedItems: Selection[] = products
+    .filter(p => selectedSizes[p.id])
+    .map(p => ({
+      product: p,
+      size: selectedSizes[p.id],
+      quantity: quantities[p.id] ?? 1,
+    }))
 
-    if (!size) { setError('Please select a size'); return }
+  const totalAmount = selectedItems.reduce(
+    (sum, s) => sum + s.product.price * s.quantity, 0
+  )
+
+  const hasSelections = selectedItems.length > 0
+
+  function openModal() {
+    if (!hasSelections) {
+      setError('Please select a size for at least one item before ordering.')
+      return
+    }
+    setError('')
+    setModalOpen(true)
+  }
+
+  async function handleSubmit() {
     if (!buyerName) { setError('Please enter your name'); return }
     if (!buyerEmail) { setError('Please enter your email'); return }
     if (!deliveryAddress) { setError('Please enter your delivery address'); return }
 
     setError('')
-    setCheckingOut(product.id)
+    setSubmitting(true)
 
     try {
-      const checkoutRes = await fetch('/api/kit/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          product_id: product.id,
-          size,
-          quantity,
-          price: product.price,
-        }),
-      })
+      // Submit one order per selected item
+      for (const sel of selectedItems) {
+        const checkoutRes = await fetch('/api/kit/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_id: sel.product.id,
+            size: sel.size,
+            quantity: sel.quantity,
+            price: sel.product.price,
+          }),
+        })
 
-      const checkoutData = await checkoutRes.json() as { paypal_order_id?: string; error?: string }
-      if (checkoutData.error) throw new Error(checkoutData.error)
+        const checkoutData = await checkoutRes.json() as { paypal_order_id?: string; error?: string }
+        if (checkoutData.error) throw new Error(checkoutData.error)
 
-      const captureRes = await fetch('/api/kit/capture', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          paypal_order_id: checkoutData.paypal_order_id,
-          product_id: product.id,
-          size,
-          quantity,
-          amount_paid: product.price * quantity,
-          buyer_name: buyerName,
-          buyer_email: buyerEmail,
-          delivery_address: deliveryAddress,
-        }),
-      })
+        const captureRes = await fetch('/api/kit/capture', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            paypal_order_id: checkoutData.paypal_order_id,
+            product_id: sel.product.id,
+            size: sel.size,
+            quantity: sel.quantity,
+            amount_paid: sel.product.price * sel.quantity,
+            buyer_name: buyerName,
+            buyer_email: buyerEmail,
+            delivery_address: deliveryAddress,
+          }),
+        })
 
-      const captureData = await captureRes.json() as { error?: string }
-      if (captureData.error) throw new Error(captureData.error)
+        const captureData = await captureRes.json() as { error?: string }
+        if (captureData.error) throw new Error(captureData.error)
+      }
 
-      setSuccess(`Order placed! Check ${buyerEmail} for your confirmation.`)
+      setSuccess(`Order placed! Confirmation sent to ${buyerEmail}.`)
+      setModalOpen(false)
+      setSelectedSizes({})
+      setQuantities({})
       setBuyerName('')
       setBuyerEmail('')
       setDeliveryAddress('')
-      setSelectedSizes({})
-      setQuantities({})
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.'
       setError(message)
     } finally {
-      setCheckingOut(null)
+      setSubmitting(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-ravens-dark">
+    <div className="min-h-screen" style={{ background: '#0A0A0A' }}>
+      <div className="max-w-5xl mx-auto px-6 py-16">
 
-      {/* ── Hero — 3D Jersey ── */}
-      <div className="relative w-full" style={{ minHeight: 600 }}>
-        <JerseyViewer />
-        <div className="absolute inset-0 flex flex-col items-center justify-end pb-12 pointer-events-none">
-          <h1 className="text-4xl font-bold text-white mb-2" style={{ fontFamily: 'cursive' }}>
-            Dublin Ravens
-          </h1>
-          <p className="text-ravens-muted uppercase tracking-widest text-sm">Kit Shop</p>
-          <p className="text-ravens-muted text-xs mt-2">Scroll to explore · Drag to rotate</p>
+        {/* Header */}
+        <div className="mb-12">
+          <div className="text-xs font-semibold tracking-[0.15em] uppercase text-indigo-400 mb-3">
+            Club Kit
+          </div>
+          <h1 className="text-4xl font-bold tracking-tight text-white mb-3">Kit Shop</h1>
+          <p className="text-ravens-muted">
+            Custom Gobik kit. Select your sizes below and place a single order.
+          </p>
         </div>
-      </div>
-
-      {/* ── Products ── */}
-      <div className="max-w-4xl mx-auto px-4 py-12 space-y-10">
 
         {success && (
-          <div className="bg-green-900 border border-green-700 rounded-lg px-4 py-3 text-green-300 text-sm">
+          <div className="mb-8 bg-green-900/30 border border-green-800/50 rounded-xl px-5 py-4 text-green-400 text-sm">
             {success}
           </div>
         )}
 
-        {error && (
-          <div className="bg-red-900 border border-red-700 rounded-lg px-4 py-3 text-red-300 text-sm">
+        {error && !modalOpen && (
+          <div className="mb-8 bg-red-900/30 border border-red-800/50 rounded-xl px-5 py-4 text-red-400 text-sm">
             {error}
           </div>
         )}
@@ -173,48 +181,63 @@ export default function KitShopPage() {
           </div>
         ) : (
           <>
-            <div className="grid gap-6 sm:grid-cols-2">
+            {/* Products grid */}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-12">
               {products.map(p => (
-                <div key={p.id} className="bg-ravens-surface border border-ravens-border rounded-lg overflow-hidden">
-                  {p.images && p.images.length > 0 ? (
-                    <div className="relative w-full h-48">
-                      <Image src={p.images[0]} alt={p.name} fill className="object-cover" />
-                    </div>
-                  ) : (
-                    <div className="w-full h-48 bg-ravens-dark flex items-center justify-center">
-                      <span className="text-ravens-muted text-sm">No image</span>
-                    </div>
-                  )}
+                <div key={p.id} className="bg-ravens-surface border border-ravens-border rounded-xl overflow-hidden">
+
+                  {/* Image — zoomed out with padding */}
+                  <div className="relative w-full h-56 bg-black">
+                    {p.images && p.images.length > 0 ? (
+                      <Image
+                        src={p.images[0]}
+                        alt={p.name}
+                        fill
+                        className="object-contain p-6"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-ravens-muted text-sm">No image</span>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="p-5 space-y-4">
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h2 className="text-white font-semibold">{p.name}</h2>
+                        <h2 className="text-white font-semibold text-sm">{p.name}</h2>
                         {p.description && (
-                          <p className="text-ravens-muted text-sm mt-1">{p.description}</p>
+                          <p className="text-ravens-muted text-xs mt-1 leading-relaxed">{p.description}</p>
                         )}
                       </div>
-                      <span className="text-white font-bold text-lg">€{p.price.toFixed(2)}</span>
+                      <span className="text-white font-bold shrink-0">€{p.price.toFixed(2)}</span>
                     </div>
 
                     {p.order_window_close && (
                       <p className="text-xs text-ravens-muted">
-                        Order window closes {formatWindowDate(p.order_window_close)}
+                        Closes {formatWindowDate(p.order_window_close)}
                       </p>
                     )}
 
-                    <div className="space-y-1">
+                    {/* Size selector */}
+                    <div className="space-y-1.5">
                       <label className="text-xs text-ravens-muted">Size</label>
-                      <div className="flex gap-2 flex-wrap">
+                      <div className="flex gap-1.5 flex-wrap">
                         {p.sizes.map(size => (
                           <button
                             key={size}
-                            onClick={() => setSelectedSizes(prev => ({ ...prev, [p.id]: size }))}
-                            className={`px-3 py-1 rounded text-sm border transition-colors ${
+                            onClick={() => setSelectedSizes(prev => ({
+                              ...prev,
+                              [p.id]: prev[p.id] === size ? '' : size
+                            }))}
+                            className={`px-2.5 py-1 rounded text-xs font-medium border transition-all ${
                               selectedSizes[p.id] === size
-                                ? 'bg-ravens-red border-ravens-red text-white'
-                                : 'border-ravens-border text-ravens-muted hover:text-white'
+                                ? 'border-indigo-500 text-white'
+                                : 'border-ravens-border text-ravens-muted hover:text-white hover:border-white/30'
                             }`}
+                            style={selectedSizes[p.id] === size ? {
+                              background: 'linear-gradient(135deg, #1E1A50, #2D2870)'
+                            } : {}}
                           >
                             {size}
                           </button>
@@ -222,82 +245,209 @@ export default function KitShopPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <label className="text-xs text-ravens-muted">Quantity</label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={10}
-                        value={quantities[p.id] ?? 1}
-                        onChange={e => setQuantities(prev => ({ ...prev, [p.id]: parseInt(e.target.value) }))}
-                        className="w-20 p-2 rounded bg-ravens-dark border border-ravens-border text-white text-sm"
-                      />
+                    {/* Quantity */}
+                    <div className="flex items-center gap-3">
+                      <label className="text-xs text-ravens-muted">Qty</label>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setQuantities(prev => ({
+                            ...prev,
+                            [p.id]: Math.max(1, (prev[p.id] ?? 1) - 1)
+                          }))}
+                          className="w-7 h-7 rounded border border-ravens-border text-ravens-muted hover:text-white hover:border-white/30 text-sm flex items-center justify-center transition-colors"
+                        >
+                          −
+                        </button>
+                        <span className="text-white text-sm w-4 text-center">
+                          {quantities[p.id] ?? 1}
+                        </span>
+                        <button
+                          onClick={() => setQuantities(prev => ({
+                            ...prev,
+                            [p.id]: Math.min(10, (prev[p.id] ?? 1) + 1)
+                          }))}
+                          className="w-7 h-7 rounded border border-ravens-border text-ravens-muted hover:text-white hover:border-white/30 text-sm flex items-center justify-center transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+                      {selectedSizes[p.id] && (
+                        <span className="text-xs text-ravens-muted ml-auto">
+                          €{(p.price * (quantities[p.id] ?? 1)).toFixed(2)}
+                        </span>
+                      )}
                     </div>
+
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="bg-ravens-surface border border-ravens-border rounded-lg p-6 space-y-4">
-              <h2 className="text-white font-semibold">Your Details</h2>
-              <p className="text-ravens-muted text-sm">Fill in your details once to apply to all orders.</p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <label className="text-sm text-ravens-muted">Full Name</label>
-                  <input
-                    value={buyerName}
-                    onChange={e => setBuyerName(e.target.value)}
-                    placeholder="Your name"
-                    className="w-full p-2 rounded bg-ravens-dark border border-ravens-border text-white text-sm"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm text-ravens-muted">Email</label>
-                  <input
-                    type="email"
-                    value={buyerEmail}
-                    onChange={e => setBuyerEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    className="w-full p-2 rounded bg-ravens-dark border border-ravens-border text-white text-sm"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm text-ravens-muted">Delivery Address</label>
-                <textarea
-                  value={deliveryAddress}
-                  onChange={e => setDeliveryAddress(e.target.value)}
-                  placeholder="Street, City, County, Eircode"
-                  rows={3}
-                  className="w-full p-2 rounded bg-ravens-dark border border-ravens-border text-white text-sm resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {products.map(p => (
-                <div key={p.id} className="flex items-center justify-between bg-ravens-surface border border-ravens-border rounded-lg px-4 py-3">
-                  <div>
-                    <p className="text-white text-sm font-medium">{p.name}</p>
-                    <p className="text-ravens-muted text-xs">
-                      {selectedSizes[p.id] ? `Size: ${selectedSizes[p.id]}` : 'No size selected'} ·
-                      Qty: {quantities[p.id] ?? 1} ·
-                      Total: €{(p.price * (quantities[p.id] ?? 1)).toFixed(2)}
+            {/* Sticky order bar */}
+            <div
+              className="sticky bottom-6 rounded-xl border px-6 py-4 flex items-center justify-between gap-4 flex-wrap"
+              style={{
+                background: 'rgba(22,22,22,0.95)',
+                backdropFilter: 'blur(12px)',
+                borderColor: hasSelections ? 'rgba(139,133,208,0.3)' : 'rgba(37,37,37,1)',
+              }}
+            >
+              <div>
+                {hasSelections ? (
+                  <>
+                    <p className="text-white font-semibold">
+                      {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} selected
                     </p>
-                  </div>
-                  <button
-                    onClick={() => handleCheckout(p)}
-                    disabled={!isOrderWindowOpen(p) || checkingOut === p.id}
-                    className="bg-ravens-red text-white px-4 py-2 rounded text-sm font-semibold disabled:opacity-50 hover:opacity-90"
-                  >
-                    {checkingOut === p.id ? 'Processing...' : 'Order Now'}
-                  </button>
-                </div>
-              ))}
+                    <p className="text-ravens-muted text-sm">
+                      {selectedItems.map(s => `${s.product.name} (${s.size})`).join(', ')}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-ravens-muted text-sm">Select sizes above to place an order</p>
+                )}
+              </div>
+              <div className="flex items-center gap-4">
+                {hasSelections && (
+                  <span className="text-white font-bold text-lg">
+                    €{totalAmount.toFixed(2)}
+                  </span>
+                )}
+                <button
+                  onClick={openModal}
+                  disabled={!hasSelections}
+                  className="px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    background: hasSelections
+                      ? 'linear-gradient(135deg, #1E1A50, #2D2870)'
+                      : 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                  }}
+                >
+                  Place Order →
+                </button>
+              </div>
             </div>
           </>
         )}
       </div>
+
+      {/* Order Modal */}
+      {modalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setModalOpen(false) }}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border border-ravens-border overflow-y-auto max-h-[90vh]"
+            style={{ background: '#161616' }}
+          >
+            <div className="p-6 border-b border-ravens-border flex items-center justify-between">
+              <h2 className="text-white font-bold text-lg">Confirm Order</h2>
+              <button
+                onClick={() => setModalOpen(false)}
+                className="text-ravens-muted hover:text-white text-xl leading-none bg-transparent border-none cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+
+              {/* Order summary */}
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-widest text-ravens-muted mb-3">
+                  Your Selection
+                </h3>
+                <div className="space-y-2">
+                  {selectedItems.map(s => (
+                    <div
+                      key={s.product.id}
+                      className="flex items-center justify-between py-2 border-b border-ravens-border last:border-0"
+                    >
+                      <div>
+                        <p className="text-white text-sm font-medium">{s.product.name}</p>
+                        <p className="text-ravens-muted text-xs">
+                          Size: {s.size} · Qty: {s.quantity}
+                        </p>
+                      </div>
+                      <span className="text-white text-sm font-semibold">
+                        €{(s.product.price * s.quantity).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-between pt-3">
+                    <span className="text-white font-bold">Total</span>
+                    <span className="text-white font-bold text-lg">€{totalAmount.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Details form */}
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-widest text-ravens-muted mb-3">
+                  Your Details
+                </h3>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs text-ravens-muted">Full Name</label>
+                      <input
+                        value={buyerName}
+                        onChange={e => setBuyerName(e.target.value)}
+                        placeholder="Your name"
+                        className="w-full px-3 py-2 rounded-lg text-white text-sm outline-none"
+                        style={{ background: '#0A0A0A', border: '1px solid rgba(37,37,37,1)' }}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-ravens-muted">Email</label>
+                      <input
+                        type="email"
+                        value={buyerEmail}
+                        onChange={e => setBuyerEmail(e.target.value)}
+                        placeholder="your@email.com"
+                        className="w-full px-3 py-2 rounded-lg text-white text-sm outline-none"
+                        style={{ background: '#0A0A0A', border: '1px solid rgba(37,37,37,1)' }}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-ravens-muted">Delivery Address</label>
+                    <textarea
+                      value={deliveryAddress}
+                      onChange={e => setDeliveryAddress(e.target.value)}
+                      placeholder="Street, City, County, Eircode"
+                      rows={3}
+                      className="w-full px-3 py-2 rounded-lg text-white text-sm outline-none resize-none"
+                      style={{ background: '#0A0A0A', border: '1px solid rgba(37,37,37,1)' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <div className="bg-red-900/30 border border-red-800/50 rounded-lg px-4 py-3 text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="w-full py-3 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50 border-none cursor-pointer"
+                style={{ background: 'linear-gradient(135deg, #1E1A50, #2D2870)' }}
+              >
+                {submitting ? 'Processing...' : `Confirm Order · €${totalAmount.toFixed(2)}`}
+              </button>
+
+              <p className="text-center text-xs text-ravens-muted">
+                Payment processed via PayPal. Orders are made to order.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
