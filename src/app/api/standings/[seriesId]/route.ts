@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -12,7 +15,6 @@ export async function GET(
 
   let { seriesId } = params
 
-  // If no real seriesId provided, fall back to the most recent series
   if (!seriesId || seriesId === 'default') {
     const { data: latest } = await supabase
       .from('series')

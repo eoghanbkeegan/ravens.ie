@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+
 // POST /api/kit/products
 // Creates a new kit product in the kit_products table
 export async function POST(req: NextRequest) {

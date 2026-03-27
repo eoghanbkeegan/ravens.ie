@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+
 // GET /api/fixtures/[fixtureId]/results
 // Returns full results for a single fixture
 // Used by the public fixture results page
