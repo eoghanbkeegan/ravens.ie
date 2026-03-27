@@ -392,8 +392,14 @@ export default async function HomePage() {
       {/* ── THORNTONS PROMO ── */}
       <div className="py-16 px-6 border-t border-white/4" style={{ background: '#18182A' }}>
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-10">
-          <div className="w-full md:w-64 aspect-square rounded-2xl border border-white/8 bg-ravens-surface flex items-center justify-center shrink-0">
-            <span className="text-ravens-muted text-sm text-center px-4">Thorntons Recycling</span>
+          <div className="w-full md:w-72 shrink-0 rounded-2xl overflow-hidden border border-white/8">
+            <Image
+              src="/sponsors/ThorntonsRecycling.png"
+              alt="Thorntons Recycling x Dublin Ravens 2026 Mondello Circuit Series"
+              width={400}
+              height={400}
+              className="w-full h-auto"
+            />
           </div>
           <div>
             <div className="text-xs font-semibold tracking-[0.15em] uppercase text-indigo-400 mb-3">Exclusive Partner Offer</div>
