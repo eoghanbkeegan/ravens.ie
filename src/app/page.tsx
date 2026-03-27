@@ -97,7 +97,7 @@ export default async function HomePage() {
 
         <div className="relative z-10 max-w-3xl">
           {/* Logo — mix-blend-mode:screen makes the black background transparent */}
-          <div className="w-64 md:w-80 mx-auto mb-6" style={{ mixBlendMode: 'screen' }}>
+          <div className="w-80 md:w-96 mx-auto mb-6 -mt-16" style={{ mixBlendMode: 'screen' }}>
             <Image
               src="/main/ravens-logo.png"
               alt="Dublin Ravens Road Club"
