@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 
 const NAV_LINKS = [
@@ -26,29 +27,16 @@ export default function Nav() {
       }}
     >
       {/* ── Logo ── */}
-      <Link href="/" className="no-underline flex items-center gap-3">
-        <div
-          className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
-          style={{ background: 'linear-gradient(135deg, #1E1A50, #2D2870)' }}
-          aria-hidden
-        >
-          <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-            <path d="M12 2C9.5 2 7.5 3.5 6.5 5.5C5.5 5 4 5 3 6c1 0 1.5.5 2 1C4 8.5 4 10 5 11.5c-.5.5-1 1.5-1 2.5 0 1.5 1 2.5 2 3-.5 1-1 2-1 3h2c0-1 .5-2 1-2.5.5.5 1.5 1 2.5 1s2-.5 2.5-1c.5.5 1 1.5 1 2.5h2c0-1-.5-2-1-3 1-.5 2-1.5 2-3 0-1-.5-2-1-2.5 1-1.5 1-3 .5-4.5.5-.5 1-1 2-1-1-1-2.5-1-3.5-.5C16.5 3.5 14.5 2 12 2z" />
-          </svg>
-        </div>
-        <div className="flex flex-col leading-none">
-          <span
-            className="font-bold text-white tracking-tight"
-            style={{ fontSize: '1.05rem', letterSpacing: '-0.01em' }}
-          >
-            Dublin Ravens
-          </span>
-          <span
-            className="uppercase text-white/40 font-medium"
-            style={{ fontSize: '0.6rem', letterSpacing: '0.18em' }}
-          >
-            Road Club
-          </span>
+      <Link href="/" className="no-underline flex items-center gap-2 shrink-0">
+        {/* mix-blend-mode: screen makes the black background transparent */}
+        <div className="relative h-9 w-24 shrink-0" style={{ mixBlendMode: 'screen' }}>
+          <Image
+            src="/main/DublinRavens.png"
+            alt="Dublin Ravens Road Club"
+            fill
+            className="object-contain object-left"
+            priority
+          />
         </div>
       </Link>
 
