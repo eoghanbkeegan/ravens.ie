@@ -367,7 +367,6 @@ export default function AdminResultsPage() {
       value={form[key]} 
       onChange={(v) => setForm((p) => ({ ...p, [key]: v, primesInTop6: null, primesTop6Count: null, prime1Position: null, prime2Position: null }))} 
       placeholder="Select rider…"
-      exclude={new Set([...allSelected].filter(id => id !== form[key]))}
     />
   </div>
 ))}
