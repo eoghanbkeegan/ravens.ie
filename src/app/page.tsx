@@ -372,17 +372,19 @@ export default async function HomePage() {
       <section id="sponsors" className="py-16 px-6 border-t border-white/6" style={{ background: '#0A0A0A' }}>
         <div className="max-w-3xl mx-auto text-center">
           <p className="text-xs tracking-[0.15em] uppercase text-ravens-muted mb-8">Proudly supported by</p>
-          <div className="flex justify-center gap-6 flex-wrap">
-            {[
-              { name: 'Stickybottle', href: 'https://www.stickybottle.com/' },
-              { name: 'BikeWorx', href: 'https://bikeworx.ie/' },
-              { name: 'Thorntons Recycling', href: 'https://www.thorntons-recycling.ie/' },
-            ].map(s => (
-              <a key={s.name} href={s.href} target="_blank" rel="noopener noreferrer"
-                className="h-14 px-6 bg-white/4 border border-white/6 rounded-xl flex items-center justify-center text-ravens-muted text-sm font-medium hover:bg-white/8 hover:border-white/12 hover:-translate-y-0.5 transition-all no-underline">
-                {s.name}
-              </a>
-            ))}
+          <div className="flex justify-center gap-8 flex-wrap items-center">
+            <a href="https://www.stickybottle.com/" target="_blank" rel="noopener noreferrer"
+              className="h-14 px-6 bg-white rounded-xl flex items-center justify-center hover:-translate-y-0.5 transition-all no-underline">
+              <Image src="/sponsors/StickyBottle.png" alt="Stickybottle" width={140} height={40} className="h-8 w-auto object-contain" />
+            </a>
+            <a href="https://bikeworx.ie/" target="_blank" rel="noopener noreferrer"
+              className="h-14 px-6 bg-white rounded-xl flex items-center justify-center hover:-translate-y-0.5 transition-all no-underline">
+              <Image src="/sponsors/BikeWorx.png" alt="BikeWorx" width={140} height={40} className="h-8 w-auto object-contain" />
+            </a>
+            <a href="https://www.thorntons-recycling.ie/" target="_blank" rel="noopener noreferrer"
+              className="h-14 px-6 bg-white rounded-xl flex items-center justify-center hover:-translate-y-0.5 transition-all no-underline">
+              <Image src="/sponsors/Thorntons.png" alt="Thorntons Recycling" width={140} height={40} className="h-8 w-auto object-contain" />
+            </a>
           </div>
         </div>
       </section>
