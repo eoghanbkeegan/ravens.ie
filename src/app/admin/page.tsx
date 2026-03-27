@@ -33,9 +33,15 @@ const adminSections = [
   },
   {
     title: 'Series',
-    description: 'Manage series and scoring templates.',
+    description: 'Manage series and link to scoring templates.',
     href: '/admin/series',
     icon: '🏆',
+  },
+  {
+    title: 'Scoring Templates',
+    description: 'Define points, prize money and bonuses per position for a series.',
+    href: '/admin/templates',
+    icon: '📋',
   },
 ]
 
