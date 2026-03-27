@@ -15,7 +15,7 @@ interface Standing {
   id: string
   series_id: string
   rank: number
-  rider_name: string
+  name: string
   team?: string
   category: 'C1' | 'C2' | 'C3'
   total_points: number
@@ -98,7 +98,7 @@ function StandingRow({ s, showRounds }: { s: Standing; showRounds: boolean }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-white text-sm truncate">{s.rider_name}</span>
+            <span className="font-semibold text-white text-sm truncate">{s.name}</span>
             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${CATEGORY_COLOURS[s.category] ?? 'bg-white/5 text-ravens-muted'}`}>
               {s.category}
             </span>
