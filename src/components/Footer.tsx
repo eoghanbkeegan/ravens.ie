@@ -3,7 +3,7 @@ import Link from 'next/link'
 export default function Footer() {
   return (
     <footer className="border-t border-ravens-border px-6 py-8 flex justify-between items-center flex-wrap gap-4 bg-ravens-dark">
-      <Link href="/contact" className="text-ravens-muted text-sm no-underline hover:text-white transition-colors">
+      <Link href="mailto:info@ravens.ie" className="text-ravens-muted text-sm no-underline hover:text-white transition-colors">
         Contact
       </Link>
 
