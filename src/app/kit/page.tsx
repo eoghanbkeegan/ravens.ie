@@ -3,6 +3,14 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 
+declare global {
+  interface Window {
+    paypal?: {
+      Buttons: (config: Record<string, unknown>) => { render: (selector: string) => void }
+    }
+  }
+}
+
 type Product = {
   id: string
   name: string
@@ -28,10 +36,10 @@ export default function KitShopPage() {
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({})
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [modalOpen, setModalOpen] = useState(false)
+  const [step, setStep] = useState<'details' | 'payment'>('details')
   const [buyerName, setBuyerName] = useState('')
   const [buyerEmail, setBuyerEmail] = useState('')
   const [deliveryAddress, setDeliveryAddress] = useState('')
-  const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
 
@@ -54,13 +62,101 @@ export default function KitShopPage() {
     load()
   }, [])
 
+  // Load PayPal button when on payment step
+  useEffect(() => {
+    if (!modalOpen || step !== 'payment') return
+
+    const existing = document.getElementById('paypal-sdk')
+    if (existing) {
+      renderPayPalButton()
+      return
+    }
+
+    const script = document.createElement('script')
+    script.id = 'paypal-sdk'
+    script.src = `https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}&currency=EUR&disable-funding=credit,card`
+    script.async = true
+    script.onload = renderPayPalButton
+    document.body.appendChild(script)
+
+    return () => {
+      const container = document.getElementById('paypal-button-container')
+      if (container) container.innerHTML = ''
+    }
+  }, [modalOpen, step]) 
+
+  function renderPayPalButton() {
+    if (!window.paypal) return
+    const container = document.getElementById('paypal-button-container')
+    if (container) container.innerHTML = ''
+
+    window.paypal.Buttons({
+      createOrder: async () => {
+        const res = await fetch('/api/kit/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: selectedItems.map(s => ({
+              product_id: s.product.id,
+              name: s.product.name,
+              size: s.size,
+              quantity: s.quantity,
+              price: s.product.price,
+            })),
+            total: totalAmount,
+          }),
+        })
+        const data = await res.json() as { paypal_order_id?: string; error?: string }
+        if (data.error) throw new Error(data.error)
+        return data.paypal_order_id!
+      },
+      onApprove: async (data: { orderID: string }) => {
+        const res = await fetch('/api/kit/capture', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            paypal_order_id: data.orderID,
+            items: selectedItems.map(s => ({
+              product_id: s.product.id,
+              size: s.size,
+              quantity: s.quantity,
+              amount_paid: s.product.price * s.quantity,
+            })),
+            total_amount: totalAmount,
+            buyer_name: buyerName,
+            buyer_email: buyerEmail,
+            delivery_address: deliveryAddress,
+          }),
+        })
+        const result = await res.json() as { error?: string; order_id?: string }
+        if (result.error) throw new Error(result.error)
+
+        const params = new URLSearchParams({
+          order_id: result.order_id ?? '',
+          email: buyerEmail,
+          name: buyerName,
+          items: JSON.stringify(selectedItems.map(s => ({
+            name: s.product.name,
+            size: s.size,
+            quantity: s.quantity,
+            price: s.product.price,
+          }))),
+          total: totalAmount.toFixed(2),
+        })
+        window.location.href = `/kit/thank-you?${params.toString()}`
+      },
+      onError: (err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Payment failed. Please try again.')
+      },
+    }).render('#paypal-button-container')
+  }
+
   function formatWindowDate(d: string) {
     return new Date(d).toLocaleDateString('en-IE', {
       day: 'numeric', month: 'short', year: 'numeric'
     })
   }
 
-  // Items that have a size selected
   const selectedItems: Selection[] = products
     .filter(p => selectedSizes[p.id])
     .map(p => ({
@@ -81,66 +177,16 @@ export default function KitShopPage() {
       return
     }
     setError('')
+    setStep('details')
     setModalOpen(true)
   }
 
-  async function handleSubmit() {
+  function handleContinueToPayment() {
     if (!buyerName) { setError('Please enter your name'); return }
     if (!buyerEmail) { setError('Please enter your email'); return }
     if (!deliveryAddress) { setError('Please enter your delivery address'); return }
-
     setError('')
-    setSubmitting(true)
-
-    try {
-      // Submit one order per selected item
-      for (const sel of selectedItems) {
-        const checkoutRes = await fetch('/api/kit/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            product_id: sel.product.id,
-            size: sel.size,
-            quantity: sel.quantity,
-            price: sel.product.price,
-          }),
-        })
-
-        const checkoutData = await checkoutRes.json() as { paypal_order_id?: string; error?: string }
-        if (checkoutData.error) throw new Error(checkoutData.error)
-
-        const captureRes = await fetch('/api/kit/capture', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            paypal_order_id: checkoutData.paypal_order_id,
-            product_id: sel.product.id,
-            size: sel.size,
-            quantity: sel.quantity,
-            amount_paid: sel.product.price * sel.quantity,
-            buyer_name: buyerName,
-            buyer_email: buyerEmail,
-            delivery_address: deliveryAddress,
-          }),
-        })
-
-        const captureData = await captureRes.json() as { error?: string }
-        if (captureData.error) throw new Error(captureData.error)
-      }
-
-      setSuccess(`Order placed! Confirmation sent to ${buyerEmail}.`)
-      setModalOpen(false)
-      setSelectedSizes({})
-      setQuantities({})
-      setBuyerName('')
-      setBuyerEmail('')
-      setDeliveryAddress('')
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.'
-      setError(message)
-    } finally {
-      setSubmitting(false)
-    }
+    setStep('payment')
   }
 
   return (
@@ -185,23 +231,15 @@ export default function KitShopPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-12">
               {products.map(p => (
                 <div key={p.id} className="bg-ravens-surface border border-ravens-border rounded-xl overflow-hidden">
-
-                  {/* Image — zoomed out with padding */}
                   <div className="relative w-full h-56 bg-black">
                     {p.images && p.images.length > 0 ? (
-                      <Image
-                        src={p.images[0]}
-                        alt={p.name}
-                        fill
-                        className="object-contain p-6"
-                      />
+                      <Image src={p.images[0]} alt={p.name} fill className="object-contain p-6" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <span className="text-ravens-muted text-sm">No image</span>
                       </div>
                     )}
                   </div>
-
                   <div className="p-5 space-y-4">
                     <div className="flex items-start justify-between gap-2">
                       <div>
@@ -212,14 +250,9 @@ export default function KitShopPage() {
                       </div>
                       <span className="text-white font-bold shrink-0">€{p.price.toFixed(2)}</span>
                     </div>
-
                     {p.order_window_close && (
-                      <p className="text-xs text-ravens-muted">
-                        Closes {formatWindowDate(p.order_window_close)}
-                      </p>
+                      <p className="text-xs text-ravens-muted">Closes {formatWindowDate(p.order_window_close)}</p>
                     )}
-
-                    {/* Size selector */}
                     <div className="space-y-1.5">
                       <label className="text-xs text-ravens-muted">Size</label>
                       <div className="flex gap-1.5 flex-wrap">
@@ -244,32 +277,18 @@ export default function KitShopPage() {
                         ))}
                       </div>
                     </div>
-
-                    {/* Quantity */}
                     <div className="flex items-center gap-3">
                       <label className="text-xs text-ravens-muted">Qty</label>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => setQuantities(prev => ({
-                            ...prev,
-                            [p.id]: Math.max(1, (prev[p.id] ?? 1) - 1)
-                          }))}
-                          className="w-7 h-7 rounded border border-ravens-border text-ravens-muted hover:text-white hover:border-white/30 text-sm flex items-center justify-center transition-colors"
-                        >
-                          −
-                        </button>
-                        <span className="text-white text-sm w-4 text-center">
-                          {quantities[p.id] ?? 1}
-                        </span>
+                          onClick={() => setQuantities(prev => ({ ...prev, [p.id]: Math.max(1, (prev[p.id] ?? 1) - 1) }))}
+                          className="w-7 h-7 rounded border border-ravens-border text-ravens-muted hover:text-white text-sm flex items-center justify-center transition-colors"
+                        >−</button>
+                        <span className="text-white text-sm w-4 text-center">{quantities[p.id] ?? 1}</span>
                         <button
-                          onClick={() => setQuantities(prev => ({
-                            ...prev,
-                            [p.id]: Math.min(10, (prev[p.id] ?? 1) + 1)
-                          }))}
-                          className="w-7 h-7 rounded border border-ravens-border text-ravens-muted hover:text-white hover:border-white/30 text-sm flex items-center justify-center transition-colors"
-                        >
-                          +
-                        </button>
+                          onClick={() => setQuantities(prev => ({ ...prev, [p.id]: Math.min(10, (prev[p.id] ?? 1) + 1) }))}
+                          className="w-7 h-7 rounded border border-ravens-border text-ravens-muted hover:text-white text-sm flex items-center justify-center transition-colors"
+                        >+</button>
                       </div>
                       {selectedSizes[p.id] && (
                         <span className="text-xs text-ravens-muted ml-auto">
@@ -277,7 +296,6 @@ export default function KitShopPage() {
                         </span>
                       )}
                     </div>
-
                   </div>
                 </div>
               ))}
@@ -308,18 +326,14 @@ export default function KitShopPage() {
               </div>
               <div className="flex items-center gap-4">
                 {hasSelections && (
-                  <span className="text-white font-bold text-lg">
-                    €{totalAmount.toFixed(2)}
-                  </span>
+                  <span className="text-white font-bold text-lg">€{totalAmount.toFixed(2)}</span>
                 )}
                 <button
                   onClick={openModal}
                   disabled={!hasSelections}
                   className="px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{
-                    background: hasSelections
-                      ? 'linear-gradient(135deg, #1E1A50, #2D2870)'
-                      : 'rgba(255,255,255,0.1)',
+                    background: hasSelections ? 'linear-gradient(135deg, #1E1A50, #2D2870)' : 'rgba(255,255,255,0.1)',
                     border: '1px solid rgba(255,255,255,0.12)',
                   }}
                 >
@@ -331,7 +345,7 @@ export default function KitShopPage() {
         )}
       </div>
 
-      {/* Order Modal */}
+      {/* Modal */}
       {modalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -342,34 +356,37 @@ export default function KitShopPage() {
             className="w-full max-w-lg rounded-2xl border border-ravens-border overflow-y-auto max-h-[90vh]"
             style={{ background: '#161616' }}
           >
+            {/* Modal header */}
             <div className="p-6 border-b border-ravens-border flex items-center justify-between">
-              <h2 className="text-white font-bold text-lg">Confirm Order</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-white font-bold text-lg">
+                  {step === 'details' ? 'Your Details' : 'Confirm & Pay'}
+                </h2>
+                {/* Step indicator */}
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-full transition-colors ${step === 'details' ? 'bg-indigo-400' : 'bg-white/20'}`} />
+                  <div className={`w-2 h-2 rounded-full transition-colors ${step === 'payment' ? 'bg-indigo-400' : 'bg-white/20'}`} />
+                </div>
+              </div>
               <button
                 onClick={() => setModalOpen(false)}
                 className="text-ravens-muted hover:text-white text-xl leading-none bg-transparent border-none cursor-pointer"
-              >
-                ✕
-              </button>
+              >✕</button>
             </div>
 
             <div className="p-6 space-y-6">
 
-              {/* Order summary */}
+              {/* Order summary — always visible */}
               <div>
                 <h3 className="text-xs font-semibold uppercase tracking-widest text-ravens-muted mb-3">
                   Your Selection
                 </h3>
                 <div className="space-y-2">
                   {selectedItems.map(s => (
-                    <div
-                      key={s.product.id}
-                      className="flex items-center justify-between py-2 border-b border-ravens-border last:border-0"
-                    >
+                    <div key={s.product.id} className="flex items-center justify-between py-2 border-b border-ravens-border last:border-0">
                       <div>
                         <p className="text-white text-sm font-medium">{s.product.name}</p>
-                        <p className="text-ravens-muted text-xs">
-                          Size: {s.size} · Qty: {s.quantity}
-                        </p>
+                        <p className="text-ravens-muted text-xs">Size: {s.size} · Qty: {s.quantity}</p>
                       </div>
                       <span className="text-white text-sm font-semibold">
                         €{(s.product.price * s.quantity).toFixed(2)}
@@ -383,13 +400,10 @@ export default function KitShopPage() {
                 </div>
               </div>
 
-              {/* Details form */}
-              <div>
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-ravens-muted mb-3">
-                  Your Details
-                </h3>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+              {/* Step 1 — Details form */}
+              {step === 'details' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-xs text-ravens-muted">Full Name</label>
                       <input
@@ -423,27 +437,47 @@ export default function KitShopPage() {
                       style={{ background: '#0A0A0A', border: '1px solid rgba(37,37,37,1)' }}
                     />
                   </div>
-                </div>
-              </div>
 
-              {error && (
-                <div className="bg-red-900/30 border border-red-800/50 rounded-lg px-4 py-3 text-red-400 text-sm">
-                  {error}
+                  {error && (
+                    <div className="bg-red-900/30 border border-red-800/50 rounded-lg px-4 py-3 text-red-400 text-sm">
+                      {error}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleContinueToPayment}
+                    className="w-full py-3 rounded-lg text-sm font-semibold text-white transition-opacity border-none cursor-pointer"
+                    style={{ background: 'linear-gradient(135deg, #1E1A50, #2D2870)' }}
+                  >
+                    Continue to Payment →
+                  </button>
                 </div>
               )}
 
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="w-full py-3 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50 border-none cursor-pointer"
-                style={{ background: 'linear-gradient(135deg, #1E1A50, #2D2870)' }}
-              >
-                {submitting ? 'Processing...' : `Confirm Order · €${totalAmount.toFixed(2)}`}
-              </button>
+              {/* Step 2 — PayPal button */}
+              {step === 'payment' && (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => { setStep('details'); setError('') }}
+                    className="text-ravens-muted text-sm hover:text-white transition-colors bg-transparent border-none cursor-pointer flex items-center gap-1"
+                  >
+                    ← Back to details
+                  </button>
 
-              <p className="text-center text-xs text-ravens-muted">
-                Payment processed via PayPal. Orders are made to order.
-              </p>
+                  {error && (
+                    <div className="bg-red-900/30 border border-red-800/50 rounded-lg px-4 py-3 text-red-400 text-sm">
+                      {error}
+                    </div>
+                  )}
+
+                  <div id="paypal-button-container" className="w-full min-h-[50px]" />
+
+                  <p className="text-center text-xs text-ravens-muted">
+                    Payment processed securely via PayPal. Orders are made to order.
+                  </p>
+                </div>
+              )}
+
             </div>
           </div>
         </div>
