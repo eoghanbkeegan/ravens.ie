@@ -6,18 +6,19 @@ import { useSearchParams } from 'next/navigation'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface RoundDetail {
-  round: number
-  label?: string
+  fixture_id: string
+  position: number | null
   points: number
+  prize: number | null
 }
 
 interface Standing {
-  id: string
+  rider_id: string
   series_id: string
   rank: number
   name: string
-  team?: string
-  category: 'C1' | 'C2' | 'C3'
+  team: string | null
+  category: string
   total_points: number
   wins: number
   podiums: number
@@ -27,10 +28,27 @@ interface Standing {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const CATEGORY_COLOURS: Record<string, string> = {
-  C1: 'bg-violet-900/40 text-violet-300',
-  C2: 'bg-sky-900/40 text-sky-300',
-  C3: 'bg-emerald-900/40 text-emerald-300',
+// Colour palette cycles for unknown categories
+const PALETTE = [
+  'bg-violet-900/40 text-violet-300',
+  'bg-sky-900/40 text-sky-300',
+  'bg-emerald-900/40 text-emerald-300',
+  'bg-orange-900/40 text-orange-300',
+  'bg-pink-900/40 text-pink-300',
+  'bg-indigo-900/40 text-indigo-300',
+  'bg-amber-900/40 text-amber-300',
+  'bg-teal-900/40 text-teal-300',
+]
+
+const colourCache: Record<string, string> = {}
+let paletteIndex = 0
+
+function categoryColour(cat: string): string {
+  if (!colourCache[cat]) {
+    colourCache[cat] = PALETTE[paletteIndex % PALETTE.length]
+    paletteIndex++
+  }
+  return colourCache[cat]
 }
 
 const MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
@@ -38,10 +56,7 @@ const MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 function RankDisplay({ rank }: { rank: number }) {
   if (rank <= 3) return <span className="text-xl leading-none">{MEDAL[rank]}</span>
   return (
-    <span
-      className="text-sm font-bold tabular-nums"
-      style={{ color: 'rgba(255,255,255,0.3)' }}
-    >
+    <span className="text-sm font-bold tabular-nums" style={{ color: 'rgba(255,255,255,0.3)' }}>
       {rank}
     </span>
   )
@@ -57,40 +72,19 @@ function StatPill({ label, value }: { label: string; value: number | string }) {
   )
 }
 
-function RoundPips({ rounds }: { rounds: RoundDetail[] }) {
-  if (!rounds?.length) return null
-  return (
-    <div className="mt-2 flex flex-wrap gap-1.5">
-      {rounds.map(r => (
-        <div
-          key={r.round}
-          title={r.label ?? `Round ${r.round}`}
-          className="flex items-center gap-1 rounded px-2 py-0.5 text-xs"
-          style={{ background: 'rgba(255,255,255,0.06)' }}
-        >
-          <span className="font-medium text-ravens-muted">R{r.round}</span>
-          <span className="font-semibold text-white">{r.points}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function StandingRow({ s, showRounds }: { s: Standing; showRounds: boolean }) {
+function StandingRow({ s }: { s: Standing }) {
   const isTop3 = s.rank <= 3
   return (
     <li
-      className="rounded-xl border px-4 py-3 transition-all group relative overflow-hidden"
+      className="rounded-xl border px-4 py-3 transition-all relative overflow-hidden"
       style={{
         background: isTop3 ? 'rgba(30,26,80,0.3)' : 'rgba(22,22,22,1)',
         borderColor: isTop3 ? 'rgba(139,133,208,0.25)' : 'rgba(37,37,37,1)',
       }}
     >
       {isTop3 && (
-        <div
-          className="absolute top-0 left-0 bottom-0 w-0.5"
-          style={{ background: 'linear-gradient(to bottom, #8B85D0, #1E1A50)' }}
-        />
+        <div className="absolute top-0 left-0 bottom-0 w-0.5"
+          style={{ background: 'linear-gradient(to bottom, #8B85D0, #1E1A50)' }} />
       )}
       <div className="flex items-center gap-4">
         <div className="flex w-8 shrink-0 items-center justify-center">
@@ -99,14 +93,13 @@ function StandingRow({ s, showRounds }: { s: Standing; showRounds: boolean }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-white text-sm truncate">{s.name}</span>
-            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${CATEGORY_COLOURS[s.category] ?? 'bg-white/5 text-ravens-muted'}`}>
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${categoryColour(s.category)}`}>
               {s.category}
             </span>
           </div>
           {s.team && (
             <p className="mt-0.5 truncate text-xs text-ravens-muted">{s.team}</p>
           )}
-          {showRounds && <RoundPips rounds={s.round_details} />}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-1.5">
           <StatPill label="PTS" value={s.total_points} />
@@ -138,9 +131,6 @@ function SkeletonRow() {
   )
 }
 
-const CATEGORIES = ['All', 'C1', 'C2', 'C3'] as const
-type Filter = (typeof CATEGORIES)[number]
-
 // ─── Inner component ──────────────────────────────────────────────────────────
 
 function StandingsContent() {
@@ -150,12 +140,10 @@ function StandingsContent() {
   const [standings, setStandings] = useState<Standing[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [filter, setFilter] = useState<Filter>('All')
-  const [showRounds, setShowRounds] = useState(false)
+  const [filter, setFilter] = useState<string>('All')
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (!seriesId) return
     setLoading(true)
     setError(null)
     fetch(`/api/standings/${seriesId}`)
@@ -163,13 +151,20 @@ function StandingsContent() {
         if (!res.ok) throw new Error(`Server error: ${res.status}`)
         return res.json()
       })
-      .then((data: Standing[]) => setStandings(data))
+      .then((data: Standing[]) => {
+        setStandings(data)
+        setFilter('All')
+      })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false))
   }, [seriesId])
 
-  const filtered = filter === 'All' ? standings : standings.filter(s => s.category === filter)
-  const hasRoundData = standings.some(s => s.round_details?.length)
+  // Derive categories dynamically from actual data
+  const categories = ['All', ...Array.from(new Set(standings.map(s => s.category))).sort()]
+
+  const filtered = filter === 'All'
+    ? standings
+    : standings.filter(s => s.category === filter)
 
   return (
     <div className="min-h-screen px-4 py-16" style={{ background: '#0A0A0A' }}>
@@ -180,44 +175,34 @@ function StandingsContent() {
           <div className="text-xs font-semibold tracking-[0.15em] uppercase text-indigo-400 mb-3">
             Series Standings
           </div>
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight text-white">Leaderboard</h1>
-              <p className="mt-2 text-sm text-ravens-muted">
-                Mondello Series · Updated after each round
-              </p>
-            </div>
-            {hasRoundData && (
-              <button
-                onClick={() => setShowRounds(v => !v)}
-                className="rounded-lg border border-ravens-border px-4 py-2 text-sm font-medium text-ravens-muted hover:text-white hover:border-white/30 transition-colors bg-transparent cursor-pointer"
-              >
-                {showRounds ? 'Hide' : 'Show'} round points
-              </button>
-            )}
-          </div>
+          <h1 className="text-4xl font-bold tracking-tight text-white">Leaderboard</h1>
+          <p className="mt-2 text-sm text-ravens-muted">
+            Mondello Series · Updated after each round
+          </p>
         </div>
 
-        {/* Category filter */}
-        <div
-          className="mb-6 flex gap-1 rounded-xl p-1 w-fit"
-          style={{ background: 'rgba(255,255,255,0.05)' }}
-        >
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setFilter(cat)}
-              className="rounded-lg px-5 py-1.5 text-sm font-medium transition-all cursor-pointer border-none"
-              style={{
-                background: filter === cat ? 'linear-gradient(135deg, #1E1A50, #2D2870)' : 'transparent',
-                color: filter === cat ? '#ffffff' : 'rgba(255,255,255,0.4)',
-                border: filter === cat ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
-              }}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        {/* Category filter — only shown once data is loaded */}
+        {!loading && !error && standings.length > 0 && (
+          <div
+            className="mb-6 flex gap-1 rounded-xl p-1 w-fit flex-wrap"
+            style={{ background: 'rgba(255,255,255,0.05)' }}
+          >
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setFilter(cat)}
+                className="rounded-lg px-5 py-1.5 text-sm font-medium transition-all cursor-pointer border-none"
+                style={{
+                  background: filter === cat ? 'linear-gradient(135deg, #1E1A50, #2D2870)' : 'transparent',
+                  color: filter === cat ? '#ffffff' : 'rgba(255,255,255,0.4)',
+                  border: filter === cat ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
+                }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Content */}
         {loading ? (
@@ -243,7 +228,7 @@ function StandingsContent() {
         ) : (
           <ul className="space-y-2">
             {filtered.map(s => (
-              <StandingRow key={s.id} s={s} showRounds={showRounds} />
+              <StandingRow key={s.rider_id} s={s} />
             ))}
           </ul>
         )}
