@@ -99,7 +99,7 @@ export default async function HomePage() {
           {/* Logo — mix-blend-mode:screen makes the black background transparent */}
           <div className="w-64 md:w-80 mx-auto mb-6" style={{ mixBlendMode: 'screen' }}>
             <Image
-              src="/main/DublinRavens.png"
+              src="/main/ravens-logo.png"
               alt="Dublin Ravens Road Club"
               width={320}
               height={160}

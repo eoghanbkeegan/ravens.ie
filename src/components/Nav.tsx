@@ -30,7 +30,7 @@ export default function Nav() {
       <Link href="/" className="no-underline flex items-center shrink-0">
         <div className="relative h-9 w-28 shrink-0" style={{ mixBlendMode: 'screen' }}>
           <Image
-            src="/main/DublinRavens.png"
+            src="/main/ravens-logo.png"
             alt="Dublin Ravens Road Club"
             fill
             className="object-contain object-left"
