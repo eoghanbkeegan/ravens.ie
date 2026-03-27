@@ -27,9 +27,8 @@ export default function Nav() {
       }}
     >
       {/* ── Logo ── */}
-      <Link href="/" className="no-underline flex items-center gap-2 shrink-0">
-        {/* mix-blend-mode: screen makes the black background transparent */}
-        <div className="relative h-9 w-24 shrink-0" style={{ mixBlendMode: 'screen' }}>
+      <Link href="/" className="no-underline flex items-center shrink-0">
+        <div className="relative h-9 w-28 shrink-0" style={{ mixBlendMode: 'screen' }}>
           <Image
             src="/main/DublinRavens.png"
             alt="Dublin Ravens Road Club"
@@ -58,9 +57,7 @@ export default function Nav() {
             </Link>
           )
         })}
-
         <div className="w-px h-5 mx-3" style={{ background: 'rgba(255,255,255,0.1)' }} />
-
         <Link
           href="/login"
           className="no-underline ml-1 px-4 py-2 rounded-md text-sm font-semibold transition-all"
@@ -81,44 +78,27 @@ export default function Nav() {
         style={{ background: open ? 'rgba(255,255,255,0.06)' : 'transparent' }}
         aria-label="Toggle menu"
       >
-        <span
-          className="block w-5 h-0.5 bg-white rounded transition-all origin-center"
-          style={{ transform: open ? 'translateY(8px) rotate(45deg)' : 'none' }}
-        />
-        <span
-          className="block w-5 h-0.5 bg-white rounded transition-all"
-          style={{ opacity: open ? 0 : 1 }}
-        />
-        <span
-          className="block w-5 h-0.5 bg-white rounded transition-all origin-center"
-          style={{ transform: open ? 'translateY(-8px) rotate(-45deg)' : 'none' }}
-        />
+        <span className="block w-5 h-0.5 bg-white rounded transition-all origin-center"
+          style={{ transform: open ? 'translateY(8px) rotate(45deg)' : 'none' }} />
+        <span className="block w-5 h-0.5 bg-white rounded transition-all"
+          style={{ opacity: open ? 0 : 1 }} />
+        <span className="block w-5 h-0.5 bg-white rounded transition-all origin-center"
+          style={{ transform: open ? 'translateY(-8px) rotate(-45deg)' : 'none' }} />
       </button>
 
       {/* ── Mobile menu ── */}
       {open && (
         <div
           className="absolute top-full left-0 right-0 border-b flex flex-col md:hidden"
-          style={{
-            background: 'rgba(10,10,10,0.97)',
-            backdropFilter: 'blur(20px)',
-            borderColor: 'rgba(255,255,255,0.06)',
-          }}
+          style={{ background: 'rgba(10,10,10,0.97)', backdropFilter: 'blur(20px)', borderColor: 'rgba(255,255,255,0.06)' }}
         >
           <div className="px-4 py-3 flex flex-col gap-1">
             {NAV_LINKS.map(({ href, label }) => {
               const active = pathname === href || pathname.startsWith(href + '/')
               return (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setOpen(false)}
+                <Link key={href} href={href} onClick={() => setOpen(false)}
                   className="no-underline px-3 py-2.5 rounded-md text-sm font-medium transition-colors"
-                  style={{
-                    color: active ? '#ffffff' : 'rgba(255,255,255,0.6)',
-                    background: active ? 'rgba(255,255,255,0.06)' : 'transparent',
-                  }}
-                >
+                  style={{ color: active ? '#ffffff' : 'rgba(255,255,255,0.6)', background: active ? 'rgba(255,255,255,0.06)' : 'transparent' }}>
                   {label}
                 </Link>
               )
@@ -126,16 +106,9 @@ export default function Nav() {
           </div>
           <div className="mx-4 my-2 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
           <div className="px-4 pb-4">
-            <Link
-              href="/login"
-              onClick={() => setOpen(false)}
+            <Link href="/login" onClick={() => setOpen(false)}
               className="no-underline block px-4 py-3 rounded-md text-sm font-semibold text-center"
-              style={{
-                background: 'linear-gradient(135deg, #1E1A50, #2D2870)',
-                color: '#ffffff',
-                border: '1px solid rgba(255,255,255,0.12)',
-              }}
-            >
+              style={{ background: 'linear-gradient(135deg, #1E1A50, #2D2870)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.12)' }}>
               Admin Login
             </Link>
           </div>

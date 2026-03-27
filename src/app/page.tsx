@@ -34,37 +34,18 @@ async function getData() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
-
   const [{ data: fixtures }, { data: series }] = await Promise.all([
-    supabase
-      .from('fixtures')
-      .select('id, title, date, venue, categories, status')
-      .order('date', { ascending: true })
-      .limit(7),
-    supabase
-      .from('series')
-      .select('id, name, year')
-      .order('year', { ascending: false })
-      .limit(1)
-      .single(),
+    supabase.from('fixtures').select('id, title, date, venue, categories, status').order('date', { ascending: true }).limit(7),
+    supabase.from('series').select('id, name, year').order('year', { ascending: false }).limit(1).single(),
   ])
-
   let standings: Standing[] = []
   if (series) {
     const { data } = await supabase
-      .from('standings')
-      .select('rank, name, team, category, total_points, wins')
-      .eq('series_id', series.id)
-      .order('rank')
-      .limit(5)
+      .from('standings').select('rank, name, team, category, total_points, wins')
+      .eq('series_id', series.id).order('rank').limit(5)
     standings = data ?? []
   }
-
-  return {
-    fixtures: (fixtures ?? []) as Fixture[],
-    series: series as Series | null,
-    standings,
-  }
+  return { fixtures: (fixtures ?? []) as Fixture[], series: series as Series | null, standings }
 }
 
 function statusStyle(s: string) {
@@ -72,23 +53,16 @@ function statusStyle(s: string) {
   if (s === 'completed') return 'bg-white/5 text-ravens-muted'
   return 'bg-red-900/30 text-red-400'
 }
-
 function statusLabel(s: string) {
   if (s === 'upcoming') return 'Upcoming'
   if (s === 'completed') return 'Completed'
   return 'Cancelled'
 }
-
 function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString('en-IE', {
-    day: 'numeric', month: 'short', year: 'numeric'
-  })
+  return new Date(d).toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: 'numeric' })
 }
-
 function fmtTime(d: string) {
-  return new Date(d).toLocaleTimeString('en-IE', {
-    hour: '2-digit', minute: '2-digit'
-  })
+  return new Date(d).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })
 }
 
 const catColour: Record<string, string> = {
@@ -96,14 +70,11 @@ const catColour: Record<string, string> = {
   C2: 'bg-sky-900/40 text-sky-300',
   C3: 'bg-emerald-900/40 text-emerald-300',
 }
-
 const rankMedal: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
 export default async function HomePage() {
   const { fixtures, series, standings } = await getData()
-
   const completedFixtures = fixtures.filter(f => f.status === 'completed')
-
   const values = [
     { title: 'Competition', desc: 'Racing at Mondello and beyond, from C3 to elite category.' },
     { title: 'Community', desc: 'Club rides, social events, and lasting friendships on the road.' },
@@ -114,7 +85,7 @@ export default async function HomePage() {
   return (
     <div style={{ background: '#0A0A0A' }} className="text-white overflow-x-hidden">
 
-      {/* ── HERO ──────────────────────────────────────────────────── */}
+      {/* ── HERO ── */}
       <section
         className="min-h-screen flex flex-col justify-center items-center text-center px-6 pt-24 pb-16 relative overflow-hidden"
         style={{ background: 'linear-gradient(180deg, #0A0A0A 0%, #1E1A50 35%, #1B1B4B 55%, #0A0A0A 100%)' }}
@@ -126,11 +97,8 @@ export default async function HomePage() {
 
         <div className="relative z-10 max-w-3xl">
           {/* Logo — mix-blend-mode:screen makes the black background transparent */}
-          <div
-            className="w-64 md:w-80 mx-auto mb-6"
-            style={{ mixBlendMode: 'screen' }}
-          >
-          <Image
+          <div className="w-64 md:w-80 mx-auto mb-6" style={{ mixBlendMode: 'screen' }}>
+            <Image
               src="/main/DublinRavens.png"
               alt="Dublin Ravens Road Club"
               width={320}
@@ -141,7 +109,7 @@ export default async function HomePage() {
             />
           </div>
 
-          <div className="inline-block text-xs font-semibold ...">
+          <div className="inline-block text-xs font-semibold tracking-[0.15em] uppercase text-ravens-muted border border-white/10 px-5 py-1.5 rounded-full mb-8">
             Est. 2025 · Dublin, Ireland · Cycling Ireland Affiliated
           </div>
 
@@ -175,7 +143,25 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── STATS STRIP ───────────────────────────────────────────── */}
+      {/* ── PHOTO BREAK ── */}
+      <div className="relative w-full overflow-hidden">
+        <Image
+          src="/main/main_page_image.jpg"
+          alt="Racing at Mondello Park"
+          width={1600}
+          height={520}
+          className="w-full object-cover"
+          style={{ maxHeight: '520px', objectPosition: 'center 40%' }}
+        />
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: 'linear-gradient(to bottom, #0A0A0A 0%, transparent 15%, transparent 80%, #0A0A0A 100%)' }} />
+        <div className="absolute bottom-4 right-5 text-xs tracking-widest uppercase"
+          style={{ color: 'rgba(255,255,255,0.35)' }}>
+          Photography: Sean Rowe Images
+        </div>
+      </div>
+
+      {/* ── STATS STRIP ── */}
       <div className="border-y border-white/6 py-12 px-6" style={{ background: '#0A0A0A' }}>
         <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
@@ -197,7 +183,7 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* ── ABOUT ─────────────────────────────────────────────────── */}
+      {/* ── ABOUT ── */}
       <section id="about" className="py-24 px-6" style={{ background: '#0A0A0A' }}>
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 items-center">
@@ -221,7 +207,6 @@ export default async function HomePage() {
                 ))}
               </div>
             </div>
-            {/* About image — real Sean Rowe photo */}
             <div className="aspect-[4/3] rounded-xl overflow-hidden border border-white/6 relative">
               <Image
                 src="/main/main_page_image.jpg"
@@ -230,10 +215,8 @@ export default async function HomePage() {
                 className="object-cover"
                 style={{ objectPosition: 'center 30%' }}
               />
-              <div
-                className="absolute bottom-3 left-4 text-xs tracking-wide"
-                style={{ color: 'rgba(255,255,255,0.35)' }}
-              >
+              <div className="absolute bottom-3 left-4 text-xs tracking-wide"
+                style={{ color: 'rgba(255,255,255,0.35)' }}>
                 Photo: Sean Rowe Images
               </div>
             </div>
@@ -241,7 +224,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── SERIES DIVIDER ────────────────────────────────────────── */}
+      {/* ── SERIES DIVIDER ── */}
       <div className="h-52 flex items-center justify-center text-center relative overflow-hidden"
         style={{ background: 'linear-gradient(180deg, #0A0A0A 0%, #1E1A50 40%, #1B1B4B 60%, #0A0A0A 100%)' }}>
         <div className="relative z-10 px-6">
@@ -252,7 +235,7 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* ── RACE CALENDAR ─────────────────────────────────────────── */}
+      {/* ── RACE CALENDAR ── */}
       <section id="series" className="py-24 px-6" style={{ background: '#0A0A0A' }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-xs font-semibold tracking-[0.15em] uppercase text-indigo-400 mb-3">
@@ -263,7 +246,6 @@ export default async function HomePage() {
             1 hour + 3 laps. Primes at 20 and 40 minutes. Cash prizes, Cycling Ireland points,
             and the Perpetual Trophy for the overall Series champion.
           </p>
-
           {fixtures.length === 0 ? (
             <div className="bg-ravens-surface border border-ravens-border rounded-xl p-10 text-center text-ravens-muted">
               No fixtures scheduled yet — check back soon.
@@ -275,19 +257,13 @@ export default async function HomePage() {
                   className="bg-ravens-surface border border-ravens-border rounded-xl p-5 hover:border-indigo-800/50 hover:-translate-y-1 transition-all group relative overflow-hidden">
                   <div className="absolute top-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                     style={{ background: 'linear-gradient(135deg, #1E1A50, #8B85D0)' }} />
-                  <div className="text-xs font-semibold tracking-widest uppercase text-indigo-400 mb-2">
-                    {f.title}
-                  </div>
+                  <div className="text-xs font-semibold tracking-widest uppercase text-indigo-400 mb-2">{f.title}</div>
                   <div className="text-xl font-bold mb-1">{fmtDate(f.date)}</div>
-                  <p className="text-ravens-muted text-sm mb-4">
-                    {f.venue} · {fmtTime(f.date)}
-                  </p>
+                  <p className="text-ravens-muted text-sm mb-4">{f.venue} · {fmtTime(f.date)}</p>
                   <div className="flex items-center justify-between">
                     <div className="flex gap-1.5 flex-wrap">
                       {(f.categories ?? []).map(c => (
-                        <span key={c} className={`text-xs font-semibold px-2 py-0.5 rounded ${catColour[c] ?? 'bg-white/5 text-ravens-muted'}`}>
-                          {c}
-                        </span>
+                        <span key={c} className={`text-xs font-semibold px-2 py-0.5 rounded ${catColour[c] ?? 'bg-white/5 text-ravens-muted'}`}>{c}</span>
                       ))}
                     </div>
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide ${statusStyle(f.status)}`}>
@@ -298,7 +274,6 @@ export default async function HomePage() {
               ))}
             </div>
           )}
-
           <div className="flex gap-4 mt-10 justify-center flex-wrap">
             <Link href="/fixtures"
               className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-semibold rounded-lg text-sm no-underline hover:border-white/50 hover:bg-white/5 transition-all">
@@ -314,15 +289,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── STANDINGS PREVIEW ─────────────────────────────────────── */}
+      {/* ── STANDINGS PREVIEW ── */}
       {standings.length > 0 && series && (
         <section className="py-20 px-6 border-t border-white/6" style={{ background: '#18182A' }}>
           <div className="max-w-3xl mx-auto">
             <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
               <div>
-                <div className="text-xs font-semibold tracking-[0.15em] uppercase text-indigo-400 mb-2">
-                  Series Standings
-                </div>
+                <div className="text-xs font-semibold tracking-[0.15em] uppercase text-indigo-400 mb-2">Series Standings</div>
                 <h2 className="text-3xl font-bold">{series.name}</h2>
               </div>
               <Link href={`/standings?seriesId=${series.id}`}
@@ -361,7 +334,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ── KIT SECTION ───────────────────────────────────────────── */}
+      {/* ── KIT SECTION ── */}
       <section id="kit" className="py-24 px-6 text-center relative overflow-hidden"
         style={{ background: 'linear-gradient(180deg, #0A0A0A 0%, #1E1A50 30%, #1B1B4B 50%, #1E1A50 70%, #0A0A0A 100%)' }}>
         <div className="relative z-10 max-w-4xl mx-auto">
@@ -377,8 +350,7 @@ export default async function HomePage() {
               { src: '/kit/jersey-sleeveless-front.png', label: 'Plus Vest', desc: 'Sleeveless' },
               { src: '/kit/jersey-bib-combo.png', label: 'Full Kit', desc: 'Jersey & Bibs' },
             ].map(item => (
-              <Link key={item.label} href="/kit"
-                className="group flex flex-col items-center gap-3 no-underline">
+              <Link key={item.label} href="/kit" className="group flex flex-col items-center gap-3 no-underline">
                 <div className="relative w-48 h-64 rounded-xl overflow-hidden border border-white/10 bg-black/40 backdrop-blur-sm group-hover:border-indigo-500/50 group-hover:-translate-y-2 transition-all">
                   <Image src={item.src} alt={item.label} fill className="object-contain p-2" />
                 </div>
@@ -396,7 +368,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── SPONSORS ──────────────────────────────────────────────── */}
+      {/* ── SPONSORS ── */}
       <section id="sponsors" className="py-16 px-6 border-t border-white/6" style={{ background: '#0A0A0A' }}>
         <div className="max-w-3xl mx-auto text-center">
           <p className="text-xs tracking-[0.15em] uppercase text-ravens-muted mb-8">Proudly supported by</p>
@@ -415,7 +387,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── THORNTONS PROMO ───────────────────────────────────────── */}
+      {/* ── THORNTONS PROMO ── */}
       <div className="py-16 px-6 border-t border-white/4" style={{ background: '#18182A' }}>
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-10">
           <div className="w-full md:w-64 aspect-square rounded-2xl border border-white/8 bg-ravens-surface flex items-center justify-center shrink-0">
@@ -435,9 +407,8 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* ── CTA BAND ──────────────────────────────────────────────── */}
-      <section className="py-20 px-6 text-center relative overflow-hidden"
-        style={{ background: '#1E1A50' }}>
+      {/* ── CTA BAND ── */}
+      <section className="py-20 px-6 text-center relative overflow-hidden" style={{ background: '#1E1A50' }}>
         <div className="absolute inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse at 30% 50%, rgba(27,27,75,0.6), transparent 60%), radial-gradient(ellipse at 70% 50%, rgba(10,10,10,0.4), transparent 60%)' }} />
         <div className="relative z-10 max-w-xl mx-auto">
@@ -458,25 +429,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* ── PHOTO BREAK ── */}
-      <div className="relative w-full overflow-hidden">
-        <Image
-          src="/main/main_page_image.jpg"
-          alt="Racing at Mondello Park"
-          width={1600}
-          height={520}
-          className="w-full object-cover"
-          style={{ maxHeight: '520px', objectPosition: 'center 40%' }}
-        />
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'linear-gradient(to bottom, #0A0A0A 0%, transparent 15%, transparent 80%, #0A0A0A 100%)' }}
-        />
-        <div className="absolute bottom-4 right-5 text-xs tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>
-          Photography: Sean Rowe Images
-        </div>
-      </div>
 
     </div>
   )
