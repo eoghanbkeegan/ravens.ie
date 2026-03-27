@@ -125,7 +125,23 @@ export default async function HomePage() {
           style={{ background: 'linear-gradient(to bottom, transparent, #0A0A0A)' }} />
 
         <div className="relative z-10 max-w-3xl">
-          <div className="inline-block text-xs font-semibold tracking-[0.15em] uppercase text-ravens-muted border border-white/10 px-5 py-1.5 rounded-full mb-8">
+          {/* Logo — mix-blend-mode:screen makes the black background transparent */}
+          <div
+            className="w-64 md:w-80 mx-auto mb-6"
+            style={{ mixBlendMode: 'screen' }}
+          >
+          <Image
+              src="/main/DublinRavens.png"
+              alt="Dublin Ravens Road Club"
+              width={320}
+              height={160}
+              className="w-full h-auto"
+              style={{ filter: 'drop-shadow(0 4px 24px rgba(104,96,192,0.4))' }}
+              priority
+            />
+          </div>
+
+          <div className="inline-block text-xs font-semibold ...">
             Est. 2025 · Dublin, Ireland · Cycling Ireland Affiliated
           </div>
 
@@ -205,10 +221,21 @@ export default async function HomePage() {
                 ))}
               </div>
             </div>
-            <div className="aspect-[4/3] rounded-xl overflow-hidden border border-white/6 bg-ravens-surface flex items-center justify-center">
-              <p className="text-ravens-muted text-sm text-center px-6">
+            {/* About image — real Sean Rowe photo */}
+            <div className="aspect-[4/3] rounded-xl overflow-hidden border border-white/6 relative">
+              <Image
+                src="/main/main_page_image.jpg"
+                alt="Dublin Ravens racing at Mondello"
+                fill
+                className="object-cover"
+                style={{ objectPosition: 'center 30%' }}
+              />
+              <div
+                className="absolute bottom-3 left-4 text-xs tracking-wide"
+                style={{ color: 'rgba(255,255,255,0.35)' }}
+              >
                 Photo: Sean Rowe Images
-              </p>
+              </div>
             </div>
           </div>
         </div>
@@ -431,6 +458,25 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── PHOTO BREAK ── */}
+      <div className="relative w-full overflow-hidden">
+        <Image
+          src="/main/main_page_image.jpg"
+          alt="Racing at Mondello Park"
+          width={1600}
+          height={520}
+          className="w-full object-cover"
+          style={{ maxHeight: '520px', objectPosition: 'center 40%' }}
+        />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'linear-gradient(to bottom, #0A0A0A 0%, transparent 15%, transparent 80%, #0A0A0A 100%)' }}
+        />
+        <div className="absolute bottom-4 right-5 text-xs tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>
+          Photography: Sean Rowe Images
+        </div>
+      </div>
 
     </div>
   )
