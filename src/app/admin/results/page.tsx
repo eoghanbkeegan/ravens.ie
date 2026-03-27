@@ -108,6 +108,16 @@ export default function AdminResultsPage() {
   const allPositionsFilled = form.positions.every((p) => p !== null);
   const bothPrimesSelected = !!form.prime1Id && !!form.prime2Id;
 
+  const allSelected = new Set([
+  ...form.positions.filter(Boolean) as string[],
+  form.firstLadyId,
+  form.firstJuniorId,
+  form.firstC2Id,
+  form.firstC3Id,
+  form.prime1Id,
+  form.prime2Id,
+].filter(Boolean) as string[])
+
   function setPosition(i: number, v: string | null) {
     setForm((p) => {
       const next = [...p.positions];
@@ -301,8 +311,12 @@ export default function AdminResultsPage() {
                 {form.ladyInTop6 === false && (
                   <div className="flex items-center gap-4">
                     <span className="w-24 shrink-0 text-sm text-muted-foreground">1st Lady</span>
-                    <RiderSelect value={form.firstLadyId} onChange={(v) => setForm((p) => ({ ...p, firstLadyId: v }))} placeholder="Select rider…" />
-                  </div>
+<RiderSelect 
+  value={form.firstLadyId} 
+  onChange={(v) => setForm((p) => ({ ...p, firstLadyId: v }))} 
+  placeholder="Select rider…"
+  exclude={new Set([...allSelected].filter(id => id !== form.firstLadyId))}
+/>                  </div>
                 )}
               </div>
               <Separator />
@@ -310,8 +324,12 @@ export default function AdminResultsPage() {
                 <div><h2 className="text-base font-semibold">Junior</h2><p className="text-xs text-muted-foreground mt-0.5">Position points if top 6, otherwise 1 pt</p></div>
                 <div className="flex items-center gap-4">
                   <span className="w-8 shrink-0 text-sm font-medium text-right text-muted-foreground">1st</span>
-                  <RiderSelect value={form.firstJuniorId} onChange={(v) => setForm((p) => ({ ...p, firstJuniorId: v, juniorInTop6: null }))} placeholder="Select rider…" />
-                </div>
+<RiderSelect 
+  value={form.firstJuniorId} 
+  onChange={(v) => setForm((p) => ({ ...p, firstJuniorId: v, juniorInTop6: null }))} 
+  placeholder="Select rider…"
+  exclude={new Set([...allSelected].filter(id => id !== form.firstJuniorId))}
+/>                </div>
                 {form.firstJuniorId && (
                   <div className="flex items-center gap-3 pl-12">
                     <input type="checkbox" id="junior-top6" checked={!!form.juniorInTop6} onChange={(e) => setForm((p) => ({ ...p, juniorInTop6: e.target.checked || null }))} className="accent-primary w-4 h-4" />
@@ -324,8 +342,12 @@ export default function AdminResultsPage() {
                 <div><h2 className="text-base font-semibold">C2</h2><p className="text-xs text-muted-foreground mt-0.5">1 pt if not in top 6</p></div>
                 <div className="flex items-center gap-4">
                   <span className="w-8 shrink-0 text-sm font-medium text-right text-muted-foreground">1st</span>
-                  <RiderSelect value={form.firstC2Id} onChange={(v) => setForm((p) => ({ ...p, firstC2Id: v }))} placeholder="Select rider…" />
-                </div>
+<RiderSelect 
+  value={form.firstC2Id} 
+  onChange={(v) => setForm((p) => ({ ...p, firstC2Id: v }))} 
+  placeholder="Select rider…"
+  exclude={new Set([...allSelected].filter(id => id !== form.firstC2Id))}
+/>                </div>
               </div>
               <Separator />
               <div className="space-y-3">
@@ -339,11 +361,15 @@ export default function AdminResultsPage() {
               <div className="space-y-4">
                 <div><h2 className="text-base font-semibold">Primes</h2><p className="text-xs text-muted-foreground mt-0.5">1 pt each regardless of top 6</p></div>
                 {(["prime1Id", "prime2Id"] as const).map((key, i) => (
-                  <div key={key} className="flex items-center gap-4">
-                    <span className="w-14 shrink-0 text-sm font-medium text-right text-muted-foreground">Prime {i + 1}</span>
-                    <RiderSelect value={form[key]} onChange={(v) => setForm((p) => ({ ...p, [key]: v, primesInTop6: null, primesTop6Count: null, prime1Position: null, prime2Position: null }))} placeholder="Select rider…" />
-                  </div>
-                ))}
+  <div key={key} className="flex items-center gap-4">
+    <span className="w-14 shrink-0 text-sm font-medium text-right text-muted-foreground">Prime {i + 1}</span>
+    <RiderSelect 
+      value={form[key]} 
+      onChange={(v) => setForm((p) => ({ ...p, [key]: v, primesInTop6: null, primesTop6Count: null, prime1Position: null, prime2Position: null }))} 
+      placeholder="Select rider…"
+    />
+  </div>
+))}
                 {bothPrimesSelected && (
                   <>
                     <p className="text-sm text-muted-foreground">Did either prime winner finish in the top 6?</p>
