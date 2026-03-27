@@ -124,7 +124,6 @@ export default async function HomePage() {
         <div className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none"
           style={{ background: 'linear-gradient(to bottom, transparent, #0A0A0A)' }} />
 
-        <image src="/main/DublinRavens.png" alt="Logo"/>
         <div className="relative z-10 max-w-3xl">
           <div className="inline-block text-xs font-semibold tracking-[0.15em] uppercase text-ravens-muted border border-white/10 px-5 py-1.5 rounded-full mb-8">
             Est. 2025 · Dublin, Ireland · Cycling Ireland Affiliated
@@ -207,7 +206,6 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="aspect-[4/3] rounded-xl overflow-hidden border border-white/6 bg-ravens-surface flex items-center justify-center">
-              <image src="/main/main_page_image.jpg" alt="Main Image"/>
               <p className="text-ravens-muted text-sm text-center px-6">
                 Photo: Sean Rowe Images
               </p>
