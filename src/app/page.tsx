@@ -146,7 +146,7 @@ export default async function HomePage() {
       {/* ── PHOTO BREAK ── */}
       <div className="relative w-full overflow-hidden">
         <Image
-          src="/main/main_page_image.jpg"
+          src="/main/main_page_image2.jpg"
           alt="Racing at Mondello Park"
           width={1600}
           height={520}
