@@ -12,7 +12,7 @@ export default function Footer() {
       </span>
 
       <div className="flex gap-6 items-center">
-        <Link href="/about" className="text-ravens-muted text-sm no-underline hover:text-white transition-colors">
+        <Link href="/#about" className="text-ravens-muted text-sm no-underline hover:text-white transition-colors">
           About us
         </Link>
         <a
