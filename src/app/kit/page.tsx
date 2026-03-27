@@ -40,7 +40,7 @@ export default function KitShopPage() {
   const [buyerName, setBuyerName] = useState('')
   const [buyerEmail, setBuyerEmail] = useState('')
   const [deliveryAddress, setDeliveryAddress] = useState('')
-  const [success, setSuccess] = useState('')
+ 
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -204,11 +204,6 @@ export default function KitShopPage() {
           </p>
         </div>
 
-        {success && (
-          <div className="mb-8 bg-green-900/30 border border-green-800/50 rounded-xl px-5 py-4 text-green-400 text-sm">
-            {success}
-          </div>
-        )}
 
         {error && !modalOpen && (
           <div className="mb-8 bg-red-900/30 border border-red-800/50 rounded-xl px-5 py-4 text-red-400 text-sm">
