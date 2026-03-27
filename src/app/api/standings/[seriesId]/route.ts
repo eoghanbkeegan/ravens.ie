@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -10,10 +13,20 @@ export async function GET(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { seriesId } = params
+  let { seriesId } = params
 
-  if (!seriesId) {
-    return NextResponse.json({ error: 'seriesId is required' }, { status: 400 })
+  if (!seriesId || seriesId === 'default') {
+    const { data: latest } = await supabase
+      .from('series')
+      .select('id')
+      .order('year', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (!latest) {
+      return NextResponse.json([], { status: 200 })
+    }
+    seriesId = latest.id
   }
 
   const { data, error } = await supabase
@@ -26,5 +39,5 @@ export async function GET(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json(data)
+  return NextResponse.json(data ?? [])
 }

@@ -19,9 +19,9 @@ const STATUSES = ['upcoming', 'completed', 'cancelled']
 const ALL_CATEGORIES = ['C1', 'C2', 'C3']
 
 export default function AdminFixturesPage() {
-       const supabase = createClient(
+  const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
   const [fixtures, setFixtures] = useState<Fixture[]>([])

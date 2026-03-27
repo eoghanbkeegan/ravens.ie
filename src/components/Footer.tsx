@@ -3,7 +3,7 @@ import Link from 'next/link'
 export default function Footer() {
   return (
     <footer className="border-t border-ravens-border px-6 py-8 flex justify-between items-center flex-wrap gap-4 bg-ravens-dark">
-      <Link href="/contact" className="text-ravens-muted text-sm no-underline hover:text-white transition-colors">
+      <Link href="mailto:info@ravens.ie" className="text-ravens-muted text-sm no-underline hover:text-white transition-colors">
         Contact
       </Link>
 
@@ -12,11 +12,11 @@ export default function Footer() {
       </span>
 
       <div className="flex gap-6 items-center">
-        <Link href="/about" className="text-ravens-muted text-sm no-underline hover:text-white transition-colors">
+        <Link href="/#about" className="text-ravens-muted text-sm no-underline hover:text-white transition-colors">
           About us
         </Link>
         <a
-          href="https://instagram.com"
+          href="https://instagram.com/dublin_ravens_road_club"
           target="_blank"
           rel="noopener noreferrer"
           className="text-ravens-muted hover:text-white transition-colors"

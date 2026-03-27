@@ -20,14 +20,26 @@ export default function JerseyViewer() {
     if (!mountRef.current) return
     const container = mountRef.current
 
+    // Use container width for responsive sizing
+    const getSize = () => ({
+      width: container.clientWidth,
+      height: Math.min(container.clientWidth, 600),
+    })
+
+    let { width, height } = getSize()
+
     // Scene setup
     const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100)
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100)
     camera.position.set(0, 0, 5)
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-    renderer.setSize(600, 600)
+    renderer.setSize(width, height)
     renderer.setPixelRatio(window.devicePixelRatio)
+    renderer.domElement.style.position = 'relative'
+    renderer.domElement.style.zIndex = '0'
+    renderer.domElement.style.width = '100%'
+    renderer.domElement.style.height = 'auto'
     container.appendChild(renderer.domElement)
 
     // Lighting
@@ -59,19 +71,30 @@ export default function JerseyViewer() {
         scene.add(mesh)
 
         // Scroll-driven rotation
- gsap.to(mesh.rotation, {
-  z: mesh.rotation.z + Math.PI * 2,
-  ease: 'none',
-  scrollTrigger: {
-    trigger: document.body,  // use the whole page instead of the container
-    start: 'top top',
-    end: 'bottom bottom',
-    scrub: 1,
-  },
-})
+        gsap.to(mesh.rotation, {
+          z: mesh.rotation.z + Math.PI * 2,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: document.body,
+            start: 'top top',
+            end: 'bottom bottom',
+            scrub: 1,
+          },
+        })
       },
       (error) => console.error('Model load error:', error)
     )
+
+    // Handle resize
+    const handleResize = () => {
+      const size = getSize()
+      width = size.width
+      height = size.height
+      camera.aspect = width / height
+      camera.updateProjectionMatrix()
+      renderer.setSize(width, height)
+    }
+    window.addEventListener('resize', handleResize)
 
     // Render loop
     let frameId: number
@@ -84,6 +107,7 @@ export default function JerseyViewer() {
     // Cleanup
     return () => {
       cancelAnimationFrame(frameId)
+      window.removeEventListener('resize', handleResize)
       ScrollTrigger.getAll().forEach((t) => t.kill())
       renderer.dispose()
       container.removeChild(renderer.domElement)
@@ -93,7 +117,13 @@ export default function JerseyViewer() {
   return (
     <div
       ref={mountRef}
-      style={{ width: 600, height: 600, margin: '0 auto' }}
+      style={{
+        width: '100%',
+        maxWidth: 600,
+        margin: '0 auto',
+        position: 'relative',
+        zIndex: 0,
+      }}
     />
   )
 }

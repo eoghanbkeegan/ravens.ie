@@ -8,6 +8,7 @@ type Product = {
   description: string | null
   price: number
   sizes: string[]
+  images: string[]
   product_type: string
   order_window_open: string | null
   order_window_close: string | null
@@ -32,6 +33,7 @@ export default function AdminProductsPage() {
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
   const [sizes, setSizes] = useState<string[]>(DEFAULT_SIZES)
+  const [imagesRaw, setImagesRaw] = useState('')
   const [productType, setProductType] = useState('preorder')
   const [orderWindowOpen, setOrderWindowOpen] = useState('')
   const [orderWindowClose, setOrderWindowClose] = useState('')
@@ -56,6 +58,7 @@ export default function AdminProductsPage() {
     setDescription('')
     setPrice('')
     setSizes(DEFAULT_SIZES)
+    setImagesRaw('')
     setProductType('preorder')
     setOrderWindowOpen('')
     setOrderWindowClose('')
@@ -70,6 +73,7 @@ export default function AdminProductsPage() {
     setDescription(p.description ?? '')
     setPrice(p.price.toString())
     setSizes(p.sizes ?? DEFAULT_SIZES)
+    setImagesRaw((p.images ?? []).join('\n'))
     setProductType(p.product_type)
     setOrderWindowOpen(p.order_window_open ?? '')
     setOrderWindowClose(p.order_window_close ?? '')
@@ -82,6 +86,13 @@ export default function AdminProductsPage() {
     setSizes(prev =>
       prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]
     )
+  }
+
+  function parseImages(raw: string): string[] {
+    return raw
+      .split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -103,6 +114,7 @@ export default function AdminProductsPage() {
       description: description || null,
       price: parsedPrice,
       sizes,
+      images: parseImages(imagesRaw),
       product_type: productType,
       order_window_open: orderWindowOpen || null,
       order_window_close: orderWindowClose || null,
@@ -203,6 +215,25 @@ export default function AdminProductsPage() {
           </div>
         </div>
 
+        <div className="space-y-1">
+          <label className="text-sm text-ravens-muted">
+            Image paths{' '}
+            <span className="font-normal opacity-60">(one per line, e.g. /kit/jersey-front.png)</span>
+          </label>
+          <textarea
+            value={imagesRaw}
+            onChange={e => setImagesRaw(e.target.value)}
+            placeholder={'/kit/jersey-front.png\n/kit/jersey-back.png'}
+            rows={3}
+            className="w-full p-2 rounded bg-ravens-dark border border-ravens-border text-white text-sm resize-none font-mono"
+          />
+          {parseImages(imagesRaw).length > 0 && (
+            <p className="text-xs text-ravens-muted">
+              {parseImages(imagesRaw).length} image{parseImages(imagesRaw).length !== 1 ? 's' : ''} — {parseImages(imagesRaw).join(', ')}
+            </p>
+          )}
+        </div>
+
         <div className="space-y-2">
           <label className="text-sm text-ravens-muted">Available Sizes</label>
           <div className="flex gap-3 flex-wrap">
@@ -293,6 +324,9 @@ export default function AdminProductsPage() {
                     <span className={p.active ? 'text-green-400' : 'text-ravens-muted'}>
                       {p.active ? 'active' : 'hidden'}
                     </span>
+                    {p.images?.length > 0 && (
+                      <> · {p.images.length} image{p.images.length !== 1 ? 's' : ''}</>
+                    )}
                   </p>
                 </div>
                 <div className="flex gap-2">
