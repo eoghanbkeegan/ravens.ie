@@ -2,6 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
+
+const JerseyViewer = dynamic(() => import('@/components/JerseyViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full flex items-center justify-center" style={{ height: 500 }}>
+      <p className="text-ravens-muted text-sm">Loading kit preview...</p>
+    </div>
+  ),
+})
 
 declare global {
   interface Window {
@@ -40,7 +50,6 @@ export default function KitShopPage() {
   const [buyerName, setBuyerName] = useState('')
   const [buyerEmail, setBuyerEmail] = useState('')
   const [deliveryAddress, setDeliveryAddress] = useState('')
- 
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -62,7 +71,6 @@ export default function KitShopPage() {
     load()
   }, [])
 
-  // Load PayPal button when on payment step
   useEffect(() => {
     if (!modalOpen || step !== 'payment') return
 
@@ -83,7 +91,7 @@ export default function KitShopPage() {
       const container = document.getElementById('paypal-button-container')
       if (container) container.innerHTML = ''
     }
-  }, [modalOpen, step]) 
+  }, [modalOpen, step])
 
   function renderPayPalButton() {
     if (!window.paypal) return
@@ -191,19 +199,21 @@ export default function KitShopPage() {
 
   return (
     <div className="min-h-screen" style={{ background: '#0A0A0A' }}>
-      <div className="max-w-5xl mx-auto px-6 py-16">
 
-        {/* Header */}
-        <div className="mb-12">
-          <div className="text-xs font-semibold tracking-[0.15em] uppercase text-indigo-400 mb-3">
-            Club Kit
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight text-white mb-3">Kit Shop</h1>
-          <p className="text-ravens-muted">
-            Custom Gobik kit. Select your sizes below and place a single order.
+      {/* 3D Jersey Hero */}
+      <div className="relative w-full" style={{ height: 500 }}>
+        <JerseyViewer />
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-10 pointer-events-none">
+          <h1 className="text-3xl font-bold text-white mb-1" style={{ fontFamily: 'cursive' }}>
+            Dublin Ravens
+          </h1>
+          <p className="text-ravens-muted text-xs uppercase tracking-widest">
+            Kit Shop · Drag to rotate
           </p>
         </div>
+      </div>
 
+      <div className="max-w-5xl mx-auto px-6 py-16">
 
         {error && !modalOpen && (
           <div className="mb-8 bg-red-900/30 border border-red-800/50 rounded-xl px-5 py-4 text-red-400 text-sm">
@@ -351,13 +361,11 @@ export default function KitShopPage() {
             className="w-full max-w-lg rounded-2xl border border-ravens-border overflow-y-auto max-h-[90vh]"
             style={{ background: '#161616' }}
           >
-            {/* Modal header */}
             <div className="p-6 border-b border-ravens-border flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <h2 className="text-white font-bold text-lg">
                   {step === 'details' ? 'Your Details' : 'Confirm & Pay'}
                 </h2>
-                {/* Step indicator */}
                 <div className="flex items-center gap-1.5">
                   <div className={`w-2 h-2 rounded-full transition-colors ${step === 'details' ? 'bg-indigo-400' : 'bg-white/20'}`} />
                   <div className={`w-2 h-2 rounded-full transition-colors ${step === 'payment' ? 'bg-indigo-400' : 'bg-white/20'}`} />
@@ -370,7 +378,6 @@ export default function KitShopPage() {
             </div>
 
             <div className="p-6 space-y-6">
-
               {/* Order summary — always visible */}
               <div>
                 <h3 className="text-xs font-semibold uppercase tracking-widest text-ravens-muted mb-3">
@@ -472,7 +479,6 @@ export default function KitShopPage() {
                   </p>
                 </div>
               )}
-
             </div>
           </div>
         </div>
