@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from '@supabase/supabase-js'
-import { useRouter } from "next/navigation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -129,7 +128,6 @@ export default function PayoutsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
-  const router   = useRouter();
 
   const [groups,    setGroups]    = useState<FixtureGroup[]>([]);
   const [loading,   setLoading]   = useState(true);
@@ -137,13 +135,6 @@ export default function PayoutsPage() {
   const [expanded,  setExpanded]  = useState<Set<string>>(new Set());
   const [filter,    setFilter]    = useState<PayoutStatus | "all">("all");
   const [onlyFailed, setOnlyFailed] = useState(false);
-
-  // ── Auth guard ──────────────────────────────────────────────────────────────
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) router.replace("/login");
-    });
-  }, [supabase, router]);
 
   // ── Fetch ───────────────────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
