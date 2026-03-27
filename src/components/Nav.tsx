@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 
 const NAV_LINKS = [
+  { href: '/', label: 'Home' },
   { href: '/fixtures', label: 'Fixtures' },
   { href: '/standings', label: 'Standings' },
   { href: '/kit', label: 'Kit' },
